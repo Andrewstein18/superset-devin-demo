@@ -82,6 +82,17 @@ under the License.
   .issue .status-badge.open { background: rgba(63,185,80,0.15); color: var(--green); }
   .issue .status-badge.closed { background: rgba(125,133,144,0.15); color: var(--muted); }
 
+  /* PRs list */
+  .pr-list { display: flex; flex-direction: column; gap: 1px; background: var(--border); border-radius: 8px; overflow: hidden; }
+  .pr-item { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center; padding: 14px 16px; background: var(--surface); }
+  .pr-item .pr-title { font-size: 14px; }
+  .pr-item .pr-title a { color: var(--text); text-decoration: none; }
+  .pr-item .pr-title a:hover { color: var(--accent); }
+  .pr-item .pr-state { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
+  .pr-item .pr-state.open { background: rgba(63,185,80,0.15); color: var(--green); }
+  .pr-item .pr-state.merged { background: rgba(188,140,255,0.15); color: var(--purple); }
+  .pr-item .pr-state.closed { background: rgba(125,133,144,0.15); color: var(--muted); }
+
   /* Activity log */
   .log { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; max-height: 300px; overflow-y: auto; }
   .log-line { padding: 4px 0; border-bottom: 1px solid rgba(48,54,61,0.5); display: flex; gap: 12px; }
@@ -126,6 +137,14 @@ under the License.
   </div>
 </div>
 
+<!-- PRs to Review (front and center) -->
+<section>
+  <h2>Pull Requests to Review</h2>
+  <div class="pr-list" id="prs-container">
+    <div class="loading">Loading from GitHub...</div>
+  </div>
+</section>
+
 <!-- Issues -->
 <section>
   <h2>Issues</h2>
@@ -161,6 +180,7 @@ async function fetchData() {
     const prs = prsResp.ok ? await prsResp.json() : [];
 
     renderMetrics(issues, prs);
+    renderPRs(prs);
     renderIssues(issues);
     renderLog(issues, prs);
   } catch (e) {
@@ -195,6 +215,32 @@ function renderMetrics(issues, prs) {
   document.getElementById('critical-count').textContent = critHigh;
   document.getElementById('fixed-count').textContent = closed;
   document.getElementById('pr-count').textContent = prs.length;
+}
+
+function renderPRs(prs) {
+  const container = document.getElementById('prs-container');
+  if (!prs.length) {
+    container.innerHTML = '<div class="loading">No PRs found</div>';
+    return;
+  }
+
+  // Show open PRs first, then merged
+  const sorted = [...prs].sort((a, b) => {
+    if (a.state === 'open' && b.state !== 'open') return -1;
+    if (a.state !== 'open' && b.state === 'open') return 1;
+    return new Date(b.created_at) - new Date(a.created_at);
+  });
+
+  container.innerHTML = sorted.map(pr => {
+    let state = pr.state;
+    let stateLabel = 'Open';
+    if (pr.merged_at) { state = 'merged'; stateLabel = 'Merged'; }
+    else if (pr.state === 'closed') { stateLabel = 'Closed'; }
+    return `<div class="pr-item">
+      <div class="pr-title"><a href="${pr.html_url}" target="_blank">#${pr.number} ${pr.title}</a></div>
+      <span class="pr-state ${state}">${stateLabel}</span>
+    </div>`;
+  }).join('');
 }
 
 function renderIssues(issues) {
@@ -251,6 +297,7 @@ function renderFallback() {
   document.getElementById('critical-count').textContent = '10';
   document.getElementById('fixed-count').textContent = '1';
   document.getElementById('pr-count').textContent = '5';
+  document.getElementById('prs-container').innerHTML = '<div class="loading">Unable to reach GitHub API.</div>';
   document.getElementById('issues-container').innerHTML = '<div class="loading">Unable to reach GitHub API. Showing cached counts above.</div>';
   document.getElementById('log-container').innerHTML = '<div class="log-line"><span class="log-time">--:--</span><span class="log-msg">Offline mode — connect to GitHub to see live data</span></div>';
 }
