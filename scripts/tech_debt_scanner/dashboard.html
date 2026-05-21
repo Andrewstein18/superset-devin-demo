@@ -47,11 +47,19 @@ under the License.
   }
 
   /* Header */
-  header { margin-bottom: 48px; }
+  header { margin-bottom: 24px; }
   header h1 { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
   header p { color: var(--muted); font-size: 15px; }
   header .status { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 13px; padding: 4px 12px; background: rgba(63,185,80,0.1); border: 1px solid rgba(63,185,80,0.3); border-radius: 20px; color: var(--green); }
   header .status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 0; margin-bottom: 32px; border-bottom: 1px solid var(--border); }
+  .tab { padding: 12px 24px; font-size: 14px; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
 
   /* Metrics Row */
   .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 48px; }
@@ -118,6 +126,47 @@ under the License.
   /* Loading */
   .loading { text-align: center; color: var(--muted); padding: 40px; }
 
+  /* Run Scanner Tab */
+  .run-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 24px; margin-bottom: 32px; }
+  .run-panel h3 { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+  .dir-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+  .dir-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; transition: border-color 0.2s; }
+  .dir-item:hover { border-color: var(--accent); }
+  .dir-item.selected { border-color: var(--accent); background: rgba(88,166,255,0.05); }
+  .dir-item input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; }
+  .dir-item label { font-size: 14px; cursor: pointer; flex: 1; }
+  .dir-item .dir-desc { font-size: 12px; color: var(--muted); }
+  .custom-dir { display: flex; gap: 8px; margin-bottom: 20px; }
+  .custom-dir input { flex: 1; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 14px; outline: none; }
+  .custom-dir input:focus { border-color: var(--accent); }
+  .custom-dir button { padding: 10px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: var(--text); cursor: pointer; font-size: 13px; }
+  .custom-dir button:hover { border-color: var(--accent); }
+  .run-btn { display: flex; align-items: center; gap: 8px; padding: 12px 32px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+  .run-btn:hover { opacity: 0.9; }
+  .run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .run-btn .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; display: none; }
+  .run-btn.running .spinner { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Live status */
+  .live-status { margin-top: 32px; }
+  .session-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+  .session-card .session-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .session-card .session-title { font-size: 14px; font-weight: 600; }
+  .session-card .session-status { font-size: 12px; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+  .session-card .session-status.running { background: rgba(88,166,255,0.15); color: var(--accent); }
+  .session-card .session-status.completed { background: rgba(63,185,80,0.15); color: var(--green); }
+  .session-card .session-status.error { background: rgba(248,81,73,0.15); color: var(--red); }
+  .session-card .session-status.queued { background: rgba(210,153,34,0.15); color: var(--orange); }
+  .session-card .session-log { font-family: 'SF Mono', monospace; font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .session-card a { color: var(--accent); text-decoration: none; font-size: 12px; }
+
+  /* API key input */
+  .api-key-section { margin-bottom: 20px; }
+  .api-key-section input { width: 100%; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 14px; font-family: 'SF Mono', monospace; outline: none; }
+  .api-key-section input:focus { border-color: var(--accent); }
+  .api-key-section .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
   /* Footer */
   footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border); }
   footer a { color: var(--accent); text-decoration: none; }
@@ -130,6 +179,15 @@ under the License.
   <p>Automated code quality remediation for <a href="https://github.com/Andrewstein18/superset-devin-demo" style="color:var(--accent);text-decoration:none">Andrewstein18/superset-devin-demo</a></p>
   <div class="status"><div class="dot"></div> Pipeline active</div>
 </header>
+
+<!-- Tab Navigation -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('dashboard')">Dashboard</div>
+  <div class="tab" onclick="switchTab('run')">Run Scanner</div>
+</div>
+
+<!-- ==================== DASHBOARD TAB ==================== -->
+<div class="tab-content active" id="tab-dashboard">
 
 <!-- Key Metrics -->
 <div class="metrics">
@@ -203,6 +261,73 @@ under the License.
   </div>
 </section>
 
+</div><!-- end tab-dashboard -->
+
+<!-- ==================== RUN SCANNER TAB ==================== -->
+<div class="tab-content" id="tab-run">
+
+<div class="run-panel">
+  <h3>Select Directories to Scan</h3>
+  <div class="dir-list" id="dir-list">
+    <div class="dir-item selected" onclick="toggleDir(this)">
+      <input type="checkbox" checked data-dir="superset/utils/">
+      <label>superset/utils/</label>
+      <span class="dir-desc">Python utilities &mdash; security, caching, dates</span>
+    </div>
+    <div class="dir-item selected" onclick="toggleDir(this)">
+      <input type="checkbox" checked data-dir="superset-frontend/src/explore/">
+      <label>superset-frontend/src/explore/</label>
+      <span class="dir-desc">Chart builder &mdash; TypeScript/React components</span>
+    </div>
+    <div class="dir-item" onclick="toggleDir(this)">
+      <input type="checkbox" data-dir="superset/tasks/">
+      <label>superset/tasks/</label>
+      <span class="dir-desc">Celery async tasks &mdash; thumbnails, queries</span>
+    </div>
+    <div class="dir-item" onclick="toggleDir(this)">
+      <input type="checkbox" data-dir="superset/views/">
+      <label>superset/views/</label>
+      <span class="dir-desc">Flask views &mdash; API endpoints, routes</span>
+    </div>
+    <div class="dir-item" onclick="toggleDir(this)">
+      <input type="checkbox" data-dir="superset/connectors/">
+      <label>superset/connectors/</label>
+      <span class="dir-desc">Database connectors &mdash; SQLAlchemy, Druid</span>
+    </div>
+  </div>
+
+  <div class="custom-dir">
+    <input type="text" id="custom-dir-input" placeholder="Add custom directory path (e.g., superset/models/)">
+    <button onclick="addCustomDir()">+ Add</button>
+  </div>
+
+  <div class="api-key-section">
+    <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px;">Devin API Token</label>
+    <input type="password" id="api-token" placeholder="cog_...">
+    <div class="hint">Required to spawn Devin agents. Token stays in your browser only.</div>
+  </div>
+
+  <button class="run-btn" id="run-btn" onclick="runScanner()">
+    <span class="spinner"></span>
+    Run Scanner
+  </button>
+</div>
+
+<!-- Live Session Status -->
+<div class="live-status" id="live-status" style="display:none;">
+  <section>
+    <h2>Live Agent Status</h2>
+    <div id="sessions-container"></div>
+  </section>
+
+  <section>
+    <h2>Run Log</h2>
+    <div class="log" id="run-log"></div>
+  </section>
+</div>
+
+</div><!-- end tab-run -->
+
 <footer>
   Powered by <a href="https://devin.ai">Devin AI</a> &middot; Runs every Sunday 8am UTC
 </footer>
@@ -210,18 +335,25 @@ under the License.
 <script>
 const REPO = 'Andrewstein18/superset-devin-demo';
 const API = `https://api.github.com/repos/${REPO}`;
+const DEVIN_API = 'https://api.devin.ai/v1';
 
+// ==================== TAB SWITCHING ====================
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+}
+
+// ==================== DASHBOARD TAB LOGIC ====================
 async function fetchData() {
   try {
-    // Fetch issues with tech-debt label
     const issuesResp = await fetch(`${API}/issues?labels=tech-debt&state=all&per_page=100`);
     const issues = issuesResp.ok ? await issuesResp.json() : [];
 
-    // Fetch PRs
     const prsResp = await fetch(`${API}/pulls?state=all&per_page=100`);
     const prs = prsResp.ok ? await prsResp.json() : [];
 
-    // Fetch commit data for docs PRs to count .md files
     const docsPrs = prs.filter(pr => pr.title.toLowerCase().includes('docs:'));
     let mdFileCount = 0;
     let filesAnalyzed = 0;
@@ -243,7 +375,6 @@ async function fetchData() {
     renderIssues(issues);
     renderLog(issues, prs);
   } catch (e) {
-    // Fallback to static display
     renderFallback();
   }
 }
@@ -254,7 +385,6 @@ function getSeverity(issue) {
   if (labels.includes('severity:high')) return 'high';
   if (labels.includes('severity:medium')) return 'medium';
   if (labels.includes('severity:low')) return 'low';
-  // Infer from title
   const t = issue.title.toLowerCase();
   if (t.includes('sql injection') || t.includes('xss')) return 'critical';
   if (t.includes('except') || t.includes('any type') || t.includes('225 any')) return 'high';
@@ -269,7 +399,6 @@ function renderMetrics(issues, prs) {
     const s = getSeverity(i);
     return s === 'critical' || s === 'high';
   }).length;
-
   document.getElementById('total-issues').textContent = total;
   document.getElementById('critical-count').textContent = critHigh;
   document.getElementById('fixed-count').textContent = closed;
@@ -278,7 +407,6 @@ function renderMetrics(issues, prs) {
 
 function renderDocsMetrics(mdFiles, filesAnalyzed, docsPrCount) {
   document.getElementById('md-files').textContent = mdFiles || '13';
-  // Estimate docstrings: ~2 per .md file created (conservative)
   document.getElementById('docstrings').textContent = mdFiles ? Math.round(mdFiles * 2.5) : '30+';
   document.getElementById('files-scanned').textContent = filesAnalyzed || '85+';
 }
@@ -290,7 +418,6 @@ function renderAnalytics(issues, prs) {
   const openPrs = prs.filter(p => p.state === 'open').length;
   const mergedPrs = prs.filter(p => p.merged_at).length;
 
-  // Pipeline stats
   document.getElementById('pipeline-stats').innerHTML = `
     <div class="stat-row"><span>Scanner agents run</span><span class="stat-val">3</span></div>
     <div class="stat-row"><span>Fixer agents spawned</span><span class="stat-val">${mergedPrs > 0 ? mergedPrs : 1}</span></div>
@@ -299,7 +426,6 @@ function renderAnalytics(issues, prs) {
     <div class="stat-row"><span>Merged PRs</span><span class="stat-val">${mergedPrs}</span></div>
   `;
 
-  // Severity breakdown
   const sev = { critical: 0, high: 0, medium: 0, low: 0 };
   issues.forEach(i => { sev[getSeverity(i)]++; });
   document.getElementById('severity-stats').innerHTML = `
@@ -312,18 +438,12 @@ function renderAnalytics(issues, prs) {
 
 function renderPRs(prs) {
   const container = document.getElementById('prs-container');
-  if (!prs.length) {
-    container.innerHTML = '<div class="loading">No PRs found</div>';
-    return;
-  }
-
-  // Show open PRs first, then merged
+  if (!prs.length) { container.innerHTML = '<div class="loading">No PRs found</div>'; return; }
   const sorted = [...prs].sort((a, b) => {
     if (a.state === 'open' && b.state !== 'open') return -1;
     if (a.state !== 'open' && b.state === 'open') return 1;
     return new Date(b.created_at) - new Date(a.created_at);
   });
-
   container.innerHTML = sorted.map(pr => {
     let state = pr.state;
     let stateLabel = 'Open';
@@ -338,15 +458,9 @@ function renderPRs(prs) {
 
 function renderIssues(issues) {
   const container = document.getElementById('issues-container');
-  if (!issues.length) {
-    container.innerHTML = '<div class="loading">No issues found</div>';
-    return;
-  }
-
-  // Sort by severity
+  if (!issues.length) { container.innerHTML = '<div class="loading">No issues found</div>'; return; }
   const order = { critical: 0, high: 1, medium: 2, low: 3 };
   issues.sort((a, b) => order[getSeverity(a)] - order[getSeverity(b)]);
-
   container.innerHTML = issues.map(issue => {
     const sev = getSeverity(issue);
     const state = issue.state === 'open' ? 'open' : 'closed';
@@ -362,8 +476,6 @@ function renderIssues(issues) {
 function renderLog(issues, prs) {
   const container = document.getElementById('log-container');
   const events = [];
-
-  // Build timeline from issue/PR creation dates
   issues.forEach(i => {
     events.push({ time: new Date(i.created_at), msg: `Filed: #${i.number} ${i.title}`, done: false });
     if (i.state === 'closed') {
@@ -373,17 +485,11 @@ function renderLog(issues, prs) {
   prs.forEach(pr => {
     events.push({ time: new Date(pr.created_at), msg: `PR #${pr.number}: ${pr.title}`, done: true });
   });
-
-  // Add docs PR events for .md files and comments
   prs.filter(pr => pr.title.toLowerCase().includes('docs:')).forEach(pr => {
     events.push({ time: new Date(pr.created_at), msg: `Docs: created MODULE_README.md files (PR #${pr.number})`, done: true });
     events.push({ time: new Date(new Date(pr.created_at).getTime() + 1000), msg: `Docs: added docstrings & inline comments (PR #${pr.number})`, done: true });
   });
-
-  // Sort by time
   events.sort((a, b) => a.time - b.time);
-
-  // Show last 20 events
   const recent = events.slice(-20);
   container.innerHTML = recent.map(e => {
     const t = e.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -406,6 +512,155 @@ function renderFallback() {
   document.getElementById('log-container').innerHTML = '<div class="log-line"><span class="log-time">--:--</span><span class="log-msg">Offline mode — connect to GitHub to see live data</span></div>';
 }
 
+// ==================== RUN SCANNER TAB LOGIC ====================
+let activeSessions = [];
+let runLogEntries = [];
+
+function toggleDir(el) {
+  const cb = el.querySelector('input[type="checkbox"]');
+  cb.checked = !cb.checked;
+  el.classList.toggle('selected', cb.checked);
+}
+
+function addCustomDir() {
+  const input = document.getElementById('custom-dir-input');
+  const dir = input.value.trim();
+  if (!dir) return;
+  const list = document.getElementById('dir-list');
+  const item = document.createElement('div');
+  item.className = 'dir-item selected';
+  item.onclick = function() { toggleDir(this); };
+  item.innerHTML = `<input type="checkbox" checked data-dir="${dir}"><label>${dir}</label><span class="dir-desc">Custom directory</span>`;
+  list.appendChild(item);
+  input.value = '';
+}
+
+function addRunLog(msg, type) {
+  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  runLogEntries.push({ time, msg, type });
+  const container = document.getElementById('run-log');
+  container.innerHTML = runLogEntries.map(e =>
+    `<div class="log-line"><span class="log-time">${e.time}</span><span class="log-msg${e.type === 'done' ? ' done' : ''}">${e.msg}</span></div>`
+  ).join('');
+  container.scrollTop = container.scrollHeight;
+}
+
+function renderSessions() {
+  const container = document.getElementById('sessions-container');
+  container.innerHTML = activeSessions.map(s => {
+    const statusClass = s.status === 'running' ? 'running' : s.status === 'stopped' || s.status === 'finished' ? 'completed' : s.status === 'error' ? 'error' : 'queued';
+    const statusLabel = s.status === 'running' ? 'Running' : s.status === 'stopped' || s.status === 'finished' ? 'Complete' : s.status === 'error' ? 'Error' : 'Queued';
+    return `<div class="session-card">
+      <div class="session-header">
+        <span class="session-title">${s.title}</span>
+        <span class="session-status ${statusClass}">${statusLabel}</span>
+      </div>
+      <div class="session-log">${s.dir} &mdash; ${s.type} agent</div>
+      ${s.url ? `<a href="${s.url}" target="_blank">View in Devin &rarr;</a>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function runScanner() {
+  const token = document.getElementById('api-token').value.trim();
+  if (!token) {
+    alert('Please enter your Devin API token');
+    return;
+  }
+
+  const dirs = [];
+  document.querySelectorAll('#dir-list input[type="checkbox"]:checked').forEach(cb => {
+    dirs.push(cb.dataset.dir);
+  });
+  if (!dirs.length) {
+    alert('Please select at least one directory to scan');
+    return;
+  }
+
+  // UI state
+  const btn = document.getElementById('run-btn');
+  btn.disabled = true;
+  btn.classList.add('running');
+  btn.innerHTML = '<span class="spinner"></span> Running...';
+  document.getElementById('live-status').style.display = 'block';
+  activeSessions = [];
+  runLogEntries = [];
+
+  addRunLog(`Starting scan of ${dirs.length} director${dirs.length > 1 ? 'ies' : 'y'}...`, 'info');
+
+  // Spawn scanner agents
+  for (const dir of dirs) {
+    addRunLog(`Spawning scanner agent for ${dir}`, 'info');
+    try {
+      const resp = await fetch(`${DEVIN_API}/sessions`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: `You are a tech debt scanner agent for the ${REPO} repository.\n\nScan the directory: ${dir}\n\n1. Clone: git clone https://github.com/${REPO}.git\n2. Read every file in ${dir}\n3. For each file, identify tech debt: type safety issues, bare exceptions, security risks, dead code, stale TODOs\n4. Classify each finding by severity: critical, high, medium, low\n5. Create a MODULE_README.md documenting the directory\n6. File GitHub issues for each finding with [Tech Debt] prefix and severity label\n7. Add inline comments and docstrings\n8. Open a docs PR with your changes`,
+          title: `Scanner: ${dir}`,
+          idempotent: true,
+          tags: ['tech-debt-scanner', 'scanner', 'auto-triggered']
+        })
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const session = { id: data.session_id, title: `Scanner: ${dir}`, dir, type: 'scanner', status: 'running', url: `https://app.devin.ai/sessions/${data.session_id}` };
+        activeSessions.push(session);
+        addRunLog(`Scanner spawned: ${data.session_id}`, 'done');
+      } else {
+        addRunLog(`Failed to spawn scanner for ${dir}: ${resp.status}`, 'error');
+      }
+    } catch (e) {
+      addRunLog(`Error spawning scanner for ${dir}: ${e.message}`, 'error');
+    }
+    renderSessions();
+  }
+
+  addRunLog('All scanner agents spawned. Polling for status...', 'info');
+
+  // Poll session status
+  pollSessions(token);
+}
+
+async function pollSessions(token) {
+  const poll = setInterval(async () => {
+    let allDone = true;
+    for (const session of activeSessions) {
+      if (session.status === 'running' || session.status === 'queued') {
+        try {
+          const resp = await fetch(`${DEVIN_API}/sessions/${session.id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (resp.ok) {
+            const data = await resp.json();
+            const newStatus = data.status_enum || 'running';
+            if (newStatus !== session.status) {
+              session.status = newStatus;
+              addRunLog(`${session.title}: ${newStatus}`, newStatus === 'stopped' || newStatus === 'finished' ? 'done' : 'info');
+              renderSessions();
+            }
+            if (newStatus === 'running' || newStatus === 'queued') {
+              allDone = false;
+            }
+          }
+        } catch (e) { allDone = false; }
+      }
+    }
+
+    if (allDone && activeSessions.length > 0) {
+      clearInterval(poll);
+      addRunLog('All agents completed!', 'done');
+      const btn = document.getElementById('run-btn');
+      btn.disabled = false;
+      btn.classList.remove('running');
+      btn.innerHTML = '<span class="spinner"></span> Run Scanner';
+      // Refresh dashboard data
+      fetchData();
+    }
+  }, 15000);
+}
+
+// ==================== INIT ====================
 fetchData();
 </script>
 </body>
