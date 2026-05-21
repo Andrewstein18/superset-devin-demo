@@ -57,23 +57,27 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEVIN_API_TOKEN: ${{ secrets.DEVIN_API_TOKEN }}
+          INPUT_TITLE: ${{ inputs.issue_title }}
+          INPUT_BODY: ${{ inputs.issue_body }}
+          INPUT_LABELS: ${{ inputs.labels }}
+          INPUT_SKIP_DEVIN: ${{ inputs.skip_devin }}
         run: |
           LABEL_ARGS=""
-          if [ -n "${{ inputs.labels }}" ]; then
-            IFS=',' read -ra LABELS <<< "${{ inputs.labels }}"
+          if [ -n "$INPUT_LABELS" ]; then
+            IFS=',' read -ra LABELS <<< "$INPUT_LABELS"
             for label in "${LABELS[@]}"; do
               LABEL_ARGS="$LABEL_ARGS --label $(echo "$label" | xargs)"
             done
           fi
 
           SKIP_FLAG=""
-          if [ "${{ inputs.skip_devin }}" = "true" ]; then
+          if [ "$INPUT_SKIP_DEVIN" = "true" ]; then
             SKIP_FLAG="--skip-devin"
           fi
 
           python scripts/devin_trigger.py \
             --repo "${{ github.repository }}" \
-            --title "${{ inputs.issue_title }}" \
-            --body "${{ inputs.issue_body }}" \
+            --title "$INPUT_TITLE" \
+            --body "$INPUT_BODY" \
             $LABEL_ARGS \
             $SKIP_FLAG
