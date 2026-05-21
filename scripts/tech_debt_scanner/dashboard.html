@@ -51,7 +51,6 @@ under the License.
   .dot.running { background: var(--orange); animation: pulse 1.5s infinite; }
   .dot.complete { background: var(--green); }
   .dot.pending { background: var(--muted); }
-  .dot.failed { background: var(--red); }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
   .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
@@ -60,8 +59,8 @@ under the License.
   .metric-card .metric-label { font-size: 13px; color: var(--muted); margin-top: 6px; }
   .metric-card.highlight .metric-value { color: var(--accent); }
   .metric-card.green .metric-value { color: var(--green); }
-  .metric-card.orange .metric-value { color: var(--orange); }
   .metric-card.red .metric-value { color: var(--red); }
+  .metric-card.orange .metric-value { color: var(--orange); }
   .metric-card.blue .metric-value { color: var(--blue); }
   .metric-card.purple .metric-value { color: var(--purple); }
 
@@ -80,7 +79,6 @@ under the License.
   .bar-fill.type-safety { background: var(--blue); }
   .bar-fill.security { background: var(--red); }
   .bar-fill.dead-code { background: var(--orange); }
-  .bar-fill.documentation { background: var(--purple); }
   .bar-fill.critical { background: var(--red); }
   .bar-fill.high { background: var(--orange); }
   .bar-fill.medium { background: var(--blue); }
@@ -107,12 +105,6 @@ under the License.
   .log-level-info { color: var(--blue); }
   .log-level-success { color: var(--green); }
   .log-level-warn { color: var(--orange); }
-  .log-level-error { color: var(--red); }
-
-  .screenshots-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
-  .screenshot-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-  .screenshot-card img { width: 100%; height: 200px; object-fit: cover; background: rgba(255,255,255,0.05); }
-  .screenshot-card .caption { padding: 12px 16px; font-size: 13px; color: var(--muted); }
 
   .agents-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
   .agent-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
@@ -120,6 +112,8 @@ under the License.
   .agent-card .agent-role { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
   .agent-card .agent-stats { font-size: 12px; color: var(--muted); }
   .agent-card .agent-stats span { color: var(--text); font-weight: 500; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
 
   .footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border); }
 </style>
@@ -128,164 +122,86 @@ under the License.
 
 <div class="header">
   <h1><span>Tech Debt Scanner</span> — Dashboard</h1>
-  <div class="timestamp" id="timestamp">Loading...</div>
+  <div class="timestamp" id="timestamp"></div>
 </div>
 
 <!-- Pipeline Status -->
-<div class="pipeline-status" id="pipeline-stages">
+<div class="pipeline-status">
   <div class="stage-card">
-    <div class="stage-label">Stage 1A</div>
-    <div class="stage-name">Scanners</div>
-    <div class="stage-status"><div class="dot complete"></div> <span>3 agents complete</span></div>
-  </div>
-  <div class="stage-card">
-    <div class="stage-label">Stage 1B</div>
-    <div class="stage-name">Documentation</div>
-    <div class="stage-status"><div class="dot complete"></div> <span>1 agent complete</span></div>
+    <div class="stage-label">Stage 1</div>
+    <div class="stage-name">Scanner Agents</div>
+    <div class="stage-status"><div class="dot complete"></div> <span>2 agents complete</span></div>
   </div>
   <div class="stage-card">
     <div class="stage-label">Stage 2</div>
-    <div class="stage-name">Fixers</div>
-    <div class="stage-status"><div class="dot complete"></div> <span>3 agents complete</span></div>
-  </div>
-  <div class="stage-card">
-    <div class="stage-label">Stage 3</div>
-    <div class="stage-name">CI Fixers</div>
-    <div class="stage-status"><div class="dot complete"></div> <span>2 agents complete</span></div>
+    <div class="stage-name">Fixer Agents</div>
+    <div class="stage-status"><div class="dot running"></div> <span>In progress</span></div>
   </div>
 </div>
 
 <!-- Key Metrics -->
-<div class="metrics-grid" id="metrics">
-  <div class="metric-card highlight"><div class="metric-value" id="m-findings">67</div><div class="metric-label">Total Findings</div></div>
-  <div class="metric-card red"><div class="metric-value" id="m-bugs">15</div><div class="metric-label">Bugs Found</div></div>
-  <div class="metric-card orange"><div class="metric-value" id="m-techdebt">52</div><div class="metric-label">Tech Debt Found</div></div>
-  <div class="metric-card green"><div class="metric-value" id="m-prs">4</div><div class="metric-label">PRs Created</div></div>
-  <div class="metric-card blue"><div class="metric-value" id="m-issues">8</div><div class="metric-label">Issues Filed</div></div>
-  <div class="metric-card purple"><div class="metric-value" id="m-agents">9</div><div class="metric-label">Agents Spawned</div></div>
-  <div class="metric-card"><div class="metric-value" id="m-lines">+312 / -187</div><div class="metric-label">Lines Changed</div></div>
-  <div class="metric-card"><div class="metric-value" id="m-comments">24</div><div class="metric-label">Comments Written</div></div>
-  <div class="metric-card"><div class="metric-value" id="m-docstrings">18</div><div class="metric-label">Docstrings Added</div></div>
-  <div class="metric-card"><div class="metric-value" id="m-mdfiles">6</div><div class="metric-label">.md Files Created</div></div>
-  <div class="metric-card green"><div class="metric-value" id="m-cirate">75%</div><div class="metric-label">CI Pass Rate</div></div>
-  <div class="metric-card"><div class="metric-value" id="m-scanned">576K</div><div class="metric-label">Lines Scanned</div></div>
+<div class="metrics-grid">
+  <div class="metric-card highlight"><div class="metric-value" id="m-findings">10</div><div class="metric-label">Issues Filed</div></div>
+  <div class="metric-card red"><div class="metric-value" id="m-security">4</div><div class="metric-label">Security Issues</div></div>
+  <div class="metric-card blue"><div class="metric-value" id="m-typesafety">3</div><div class="metric-label">Type Safety Issues</div></div>
+  <div class="metric-card orange"><div class="metric-value" id="m-deadcode">3</div><div class="metric-label">Dead Code / TODOs</div></div>
+  <div class="metric-card green"><div class="metric-value" id="m-prs">1</div><div class="metric-label">Docs PRs Created</div></div>
+  <div class="metric-card purple"><div class="metric-value" id="m-agents">2</div><div class="metric-label">Agents Spawned</div></div>
+  <div class="metric-card"><div class="metric-value" id="m-mdfiles">7</div><div class="metric-label">.md Files Created</div></div>
+  <div class="metric-card"><div class="metric-value" id="m-docstrings">15+</div><div class="metric-label">Docstrings Added</div></div>
 </div>
 
 <!-- Charts -->
 <div class="charts-row">
   <div class="chart-card">
-    <h3>Findings by Category</h3>
-    <div class="bar-chart" id="chart-category">
-      <div class="bar-row"><div class="bar-label">Type Safety</div><div class="bar-track"><div class="bar-fill type-safety" style="width:42%">28</div></div></div>
-      <div class="bar-row"><div class="bar-label">Security</div><div class="bar-track"><div class="bar-fill security" style="width:22%">15</div></div></div>
-      <div class="bar-row"><div class="bar-label">Dead Code</div><div class="bar-track"><div class="bar-fill dead-code" style="width:36%">24</div></div></div>
+    <h3>Issues by Category</h3>
+    <div class="bar-chart">
+      <div class="bar-row"><div class="bar-label">Security</div><div class="bar-track"><div class="bar-fill security" style="width:40%">4</div></div></div>
+      <div class="bar-row"><div class="bar-label">Type Safety</div><div class="bar-track"><div class="bar-fill type-safety" style="width:30%">3</div></div></div>
+      <div class="bar-row"><div class="bar-label">Dead Code</div><div class="bar-track"><div class="bar-fill dead-code" style="width:30%">3</div></div></div>
     </div>
   </div>
   <div class="chart-card">
-    <h3>Findings by Severity</h3>
-    <div class="bar-chart" id="chart-severity">
-      <div class="bar-row"><div class="bar-label">Critical</div><div class="bar-track"><div class="bar-fill critical" style="width:3%">2</div></div></div>
-      <div class="bar-row"><div class="bar-label">High</div><div class="bar-track"><div class="bar-fill high" style="width:21%">14</div></div></div>
-      <div class="bar-row"><div class="bar-label">Medium</div><div class="bar-track"><div class="bar-fill medium" style="width:46%">31</div></div></div>
-      <div class="bar-row"><div class="bar-label">Low</div><div class="bar-track"><div class="bar-fill low" style="width:30%">20</div></div></div>
+    <h3>Issues by Severity</h3>
+    <div class="bar-chart">
+      <div class="bar-row"><div class="bar-label">Critical</div><div class="bar-track"><div class="bar-fill critical" style="width:20%">2</div></div></div>
+      <div class="bar-row"><div class="bar-label">High</div><div class="bar-track"><div class="bar-fill high" style="width:30%">3</div></div></div>
+      <div class="bar-row"><div class="bar-label">Medium</div><div class="bar-track"><div class="bar-fill medium" style="width:30%">3</div></div></div>
+      <div class="bar-row"><div class="bar-label">Low</div><div class="bar-track"><div class="bar-fill low" style="width:20%">2</div></div></div>
     </div>
   </div>
 </div>
 
 <!-- Active Agents -->
 <div class="section">
-  <h2>Devin Agents <span class="badge" id="agent-count">9 total</span></h2>
-  <div class="agents-grid" id="agents-grid">
+  <h2>Devin Agents <span class="badge">2 scanners + fixers</span></h2>
+  <div class="agents-grid">
     <div class="agent-card">
-      <div class="agent-name">Scanner: Type Safety</div>
-      <div class="agent-role">Stage 1A — Pattern analysis</div>
-      <div class="agent-stats">Found <span>28</span> issues &middot; <span>2</span> sub-agents spawned</div>
+      <div class="agent-name">Scanner: superset/utils/</div>
+      <div class="agent-role">Stage 1 &mdash; Backend code analysis</div>
+      <div class="agent-stats">Filed <span>10</span> issues &middot; Created <span>7</span> .md files &middot; <a href="https://app.devin.ai/sessions/9cc3d8e9bd7146c28423ba7ddfe7c1fa">session</a></div>
     </div>
     <div class="agent-card">
-      <div class="agent-name">Scanner: Security</div>
-      <div class="agent-role">Stage 1A — Vulnerability detection</div>
-      <div class="agent-stats">Found <span>15</span> issues &middot; <span>1</span> sub-agent spawned</div>
-    </div>
-    <div class="agent-card">
-      <div class="agent-name">Scanner: Dead Code</div>
-      <div class="agent-role">Stage 1A — Stale code detection</div>
-      <div class="agent-stats">Found <span>24</span> issues &middot; <span>0</span> sub-agents spawned</div>
-    </div>
-    <div class="agent-card">
-      <div class="agent-name">Documentation Agent</div>
-      <div class="agent-role">Stage 1B — .md generation &amp; docstrings</div>
-      <div class="agent-stats">Created <span>6</span> .md files &middot; <span>18</span> docstrings &middot; <span>24</span> comments</div>
-    </div>
-    <div class="agent-card">
-      <div class="agent-name">Fixer: Type Safety</div>
-      <div class="agent-role">Stage 2 — Automated fixes</div>
-      <div class="agent-stats">Fixed <span>12</span> issues &middot; PR <span>#5</span></div>
-    </div>
-    <div class="agent-card">
-      <div class="agent-name">Fixer: Security</div>
-      <div class="agent-role">Stage 2 — Exception handling fixes</div>
-      <div class="agent-stats">Fixed <span>5</span> issues &middot; PR <span>#6</span></div>
-    </div>
-    <div class="agent-card">
-      <div class="agent-name">Fixer: Dead Code</div>
-      <div class="agent-role">Stage 2 — Deprecated code removal</div>
-      <div class="agent-stats">Fixed <span>18</span> issues &middot; PR <span>#7</span></div>
-    </div>
-    <div class="agent-card">
-      <div class="agent-name">CI Fixer #1</div>
-      <div class="agent-role">Stage 3 — CI iteration</div>
-      <div class="agent-stats">PR #5 &middot; <span>2</span> attempts &middot; <span style="color:var(--green)">Passed</span></div>
-    </div>
-    <div class="agent-card">
-      <div class="agent-name">CI Fixer #2</div>
-      <div class="agent-role">Stage 3 — CI iteration</div>
-      <div class="agent-stats">PR #7 &middot; <span>1</span> attempt &middot; <span style="color:var(--green)">Passed</span></div>
+      <div class="agent-name">Scanner: superset-frontend/src/explore/</div>
+      <div class="agent-role">Stage 1 &mdash; Frontend code analysis</div>
+      <div class="agent-stats">Running &middot; <a href="https://app.devin.ai/sessions/c53eaa2afc914fc4b71da7a23ac04da9">session</a></div>
     </div>
   </div>
 </div>
 
 <!-- PRs Created -->
 <div class="section">
-  <h2>Pull Requests <span class="badge" id="pr-count">4</span></h2>
+  <h2>Pull Requests <span class="badge">1</span></h2>
   <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden">
   <table>
-    <thead><tr><th>#</th><th>Title</th><th>Category</th><th>Findings</th><th>Lines</th><th>CI</th><th>Labels</th></tr></thead>
-    <tbody id="pr-table">
+    <thead><tr><th>#</th><th>Title</th><th>Type</th><th>Artifacts</th><th>Labels</th></tr></thead>
+    <tbody>
       <tr>
-        <td><a href="#" style="color:var(--accent)">#5</a></td>
-        <td>fix: replace bare exceptions with specific types</td>
-        <td><span class="label label-security">security</span></td>
-        <td>5</td>
-        <td>+23 / -15</td>
-        <td style="color:var(--green)">Passed (1 attempt)</td>
-        <td><span class="label label-tech-debt">tech-debt</span><span class="label label-security">security</span></td>
-      </tr>
-      <tr>
-        <td><a href="#" style="color:var(--accent)">#6</a></td>
-        <td>refactor: remove deprecated scheduler options</td>
-        <td><span class="label label-dead-code">dead-code</span></td>
-        <td>3</td>
-        <td>+0 / -42</td>
-        <td style="color:var(--green)">Passed (1 attempt)</td>
-        <td><span class="label label-tech-debt">tech-debt</span><span class="label label-dead-code">dead-code</span></td>
-      </tr>
-      <tr>
-        <td><a href="#" style="color:var(--accent)">#7</a></td>
-        <td>fix: replace any types in explore/store.ts</td>
-        <td><span class="label label-type-safety">type-safety</span></td>
-        <td>5</td>
-        <td>+18 / -12</td>
-        <td style="color:var(--green)">Passed (2 attempts)</td>
-        <td><span class="label label-tech-debt">tech-debt</span><span class="label label-type-safety">type-safety</span></td>
-      </tr>
-      <tr>
-        <td><a href="#" style="color:var(--accent)">#8</a></td>
-        <td>docs: add module documentation and docstrings</td>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/pull/16">#16</a></td>
+        <td>docs: add documentation for superset/utils/</td>
         <td><span class="label label-documentation">documentation</span></td>
-        <td>&mdash;</td>
-        <td>+289 / -0</td>
-        <td style="color:var(--orange)">Needs review</td>
-        <td><span class="label label-documentation">documentation</span></td>
+        <td>7 .md files, 15+ docstrings</td>
+        <td><span class="label label-documentation">documentation</span><span class="label label-tech-debt">automated-cleanup</span></td>
       </tr>
     </tbody>
   </table>
@@ -294,181 +210,119 @@ under the License.
 
 <!-- Issues Filed -->
 <div class="section">
-  <h2>Issues Filed <span class="badge" id="issue-count">8</span></h2>
+  <h2>Issues Filed <span class="badge">10</span></h2>
   <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden">
   <table>
-    <thead><tr><th>#</th><th>Title</th><th>Severity</th><th>Category</th><th>Labels</th></tr></thead>
-    <tbody id="issue-table">
+    <thead><tr><th>#</th><th>Title</th><th>Category</th></tr></thead>
+    <tbody>
       <tr>
-        <td><a href="#" style="color:var(--accent)">#10</a></td>
-        <td>Missing access control in alerts module</td>
-        <td><span class="severity-high">high</span></td>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/6">#6</a></td>
+        <td>SQL injection risk in SecretsMigrator._select_columns_from_table</td>
         <td><span class="label label-security">security</span></td>
-        <td><span class="label label-tech-debt">tech-debt</span><span class="label label-security">security</span></td>
       </tr>
       <tr>
-        <td><a href="#" style="color:var(--accent)">#11</a></td>
-        <td>Duplicate code in database.py and DatabaseDao</td>
-        <td><span class="severity-medium">medium</span></td>
-        <td><span class="label label-dead-code">dead-code</span></td>
-        <td><span class="label label-tech-debt">tech-debt</span><span class="label label-dead-code">dead-code</span></td>
-      </tr>
-      <tr>
-        <td><a href="#" style="color:var(--accent)">#12</a></td>
-        <td>f-string SQL query in encrypt.py (injection risk)</td>
-        <td><span class="severity-critical">critical</span></td>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/7">#7</a></td>
+        <td>Bare except BaseException swallows all errors in csv.py</td>
         <td><span class="label label-security">security</span></td>
-        <td><span class="label label-tech-debt">tech-debt</span><span class="label label-security">security</span></td>
       </tr>
       <tr>
-        <td><a href="#" style="color:var(--accent)">#13</a></td>
-        <td>RLS parse failure silently returns empty list</td>
-        <td><span class="severity-high">high</span></td>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/8">#8</a></td>
+        <td>Broad except Exception used for control flow in core.py</td>
         <td><span class="label label-security">security</span></td>
-        <td><span class="label label-tech-debt">tech-debt</span><span class="label label-security">security</span></td>
       </tr>
       <tr>
-        <td><a href="#" style="color:var(--accent)">#14</a></td>
-        <td>11 untyped params in nativeFilters/selectors.ts</td>
-        <td><span class="severity-medium">medium</span></td>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/9">#9</a></td>
+        <td>raise Exception (broad) used instead of specific types</td>
+        <td><span class="label label-security">security</span></td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/10">#10</a></td>
+        <td>Legacy typing.Optional, Dict, Union imports instead of modern syntax</td>
         <td><span class="label label-type-safety">type-safety</span></td>
-        <td><span class="label label-tech-debt">tech-debt</span><span class="label label-type-safety">type-safety</span></td>
       </tr>
       <tr>
-        <td><a href="#" style="color:var(--accent)">#15</a></td>
-        <td>TODO: Replace SQLLab API with command class</td>
-        <td><span class="severity-low">low</span></td>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/11">#11</a></td>
+        <td>Duplicate from typing import Any in webdriver.py</td>
+        <td><span class="label label-type-safety">type-safety</span></td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/12">#12</a></td>
+        <td>Stale TODO comments in database.py marked for removal</td>
         <td><span class="label label-dead-code">dead-code</span></td>
-        <td><span class="label label-tech-debt">tech-debt</span><span class="label label-dead-code">dead-code</span></td>
       </tr>
       <tr>
-        <td><a href="#" style="color:var(--accent)">#16</a></td>
-        <td>URL validation silently returns empty string</td>
-        <td><span class="severity-medium">medium</span></td>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/13">#13</a></td>
+        <td>Regex-based SVG sanitization in core.py is bypassable</td>
         <td><span class="label label-security">security</span></td>
-        <td><span class="label label-tech-debt">tech-debt</span><span class="label label-security">security</span></td>
       </tr>
       <tr>
-        <td><a href="#" style="color:var(--accent)">#17</a></td>
-        <td>3x deprecated scheduler options ready to remove</td>
-        <td><span class="severity-low">low</span></td>
-        <td><span class="label label-dead-code">dead-code</span></td>
-        <td><span class="label label-tech-debt">tech-debt</span><span class="label label-dead-code">dead-code</span></td>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/14">#14</a></td>
+        <td>Pervasive use of Any type in webdriver.py and log.py</td>
+        <td><span class="label label-type-safety">type-safety</span></td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/15">#15</a></td>
+        <td>Raw f-string SQL in SecretsMigrator._re_encrypt_row</td>
+        <td><span class="label label-security">security</span></td>
       </tr>
     </tbody>
   </table>
   </div>
 </div>
 
-<!-- Screenshots / Artifacts -->
-<div class="section">
-  <h2>Artifacts &amp; Screenshots</h2>
-  <div class="screenshots-grid" id="screenshots">
-    <div class="screenshot-card">
-      <div style="height:200px;background:linear-gradient(135deg,rgba(99,102,241,0.3),rgba(168,85,247,0.3));display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px">
-        Screenshot: Type Safety PR diff
-      </div>
-      <div class="caption">PR #7 — replaced 5 <code>any</code> types with proper TypeScript types in explore/store.ts</div>
-    </div>
-    <div class="screenshot-card">
-      <div style="height:200px;background:linear-gradient(135deg,rgba(239,68,68,0.3),rgba(245,158,11,0.3));display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px">
-        Screenshot: Security fix diff
-      </div>
-      <div class="caption">PR #5 — replaced bare <code>except Exception:</code> with specific exception types in utils/</div>
-    </div>
-    <div class="screenshot-card">
-      <div style="height:200px;background:linear-gradient(135deg,rgba(34,197,94,0.3),rgba(59,130,246,0.3));display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px">
-        Screenshot: Documentation PR
-      </div>
-      <div class="caption">PR #8 — generated 6 .md module docs and added 18 docstrings across superset/utils/</div>
-    </div>
-    <div class="screenshot-card">
-      <div style="height:200px;background:linear-gradient(135deg,rgba(245,158,11,0.3),rgba(99,102,241,0.3));display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px">
-        Screenshot: CI passing
-      </div>
-      <div class="caption">CI green after 2 iterations on PR #7 — type errors in downstream components auto-fixed</div>
-    </div>
-  </div>
-</div>
-
 <!-- Pipeline Log -->
 <div class="section">
   <h2>Pipeline Log</h2>
-  <div class="logs-panel" id="logs">
-    <div class="log-entry"><span class="log-time">00:00:00</span><span class="log-level-info">[INFO]</span> Starting tech debt scanner for Andrewstein18/superset-devin-demo</div>
-    <div class="log-entry"><span class="log-time">00:00:01</span><span class="log-level-info">[INFO]</span> Backend targets: superset/utils/, superset/views/, superset/tasks/</div>
-    <div class="log-entry"><span class="log-time">00:00:01</span><span class="log-level-info">[INFO]</span> Frontend targets: superset-frontend/src/explore/, superset-frontend/src/dashboard/</div>
-    <div class="log-entry"><span class="log-time">00:00:02</span><span class="log-level-info">[INFO]</span> === Stage 1A: Spawning 3 scanner agents ===</div>
-    <div class="log-entry"><span class="log-time">00:00:03</span><span class="log-level-info">[INFO]</span> Created scanner: Type Safety (session e13c...8770)</div>
-    <div class="log-entry"><span class="log-time">00:00:03</span><span class="log-level-info">[INFO]</span> Created scanner: Security (session 1db1...79ea)</div>
-    <div class="log-entry"><span class="log-time">00:00:04</span><span class="log-level-info">[INFO]</span> Created scanner: Dead Code (session 4ee5...ca6)</div>
-    <div class="log-entry"><span class="log-time">00:00:04</span><span class="log-level-info">[INFO]</span> === Stage 1B: Spawning documentation agent ===</div>
-    <div class="log-entry"><span class="log-time">00:00:05</span><span class="log-level-info">[INFO]</span> Created documentation agent (session a7b2...f31)</div>
-    <div class="log-entry"><span class="log-time">00:02:30</span><span class="log-level-info">[INFO]</span> Gathering scanner results...</div>
-    <div class="log-entry"><span class="log-time">00:04:15</span><span class="log-level-success">[SUCCESS]</span> Scanner: Type Safety — 28 findings</div>
-    <div class="log-entry"><span class="log-time">00:04:16</span><span class="log-level-success">[SUCCESS]</span> Scanner: Security — 15 findings</div>
-    <div class="log-entry"><span class="log-time">00:04:17</span><span class="log-level-success">[SUCCESS]</span> Scanner: Dead Code — 24 findings</div>
-    <div class="log-entry"><span class="log-time">00:05:00</span><span class="log-level-success">[SUCCESS]</span> Documentation agent complete — 6 .md files, 18 docstrings, 24 comments</div>
-    <div class="log-entry"><span class="log-time">00:05:01</span><span class="log-level-info">[INFO]</span> === Triage: Deduplicating 67 findings ===</div>
-    <div class="log-entry"><span class="log-time">00:05:01</span><span class="log-level-info">[INFO]</span> After dedup: 67 unique findings</div>
-    <div class="log-entry"><span class="log-time">00:05:02</span><span class="log-level-info">[INFO]</span> Auto-fixes: 35 | Issues to file: 32</div>
-    <div class="log-entry"><span class="log-time">00:05:03</span><span class="log-level-info">[INFO]</span> === Stage 2: Spawning 3 fixer agents ===</div>
-    <div class="log-entry"><span class="log-time">00:05:04</span><span class="log-level-info">[INFO]</span> Filing 8 GitHub issues...</div>
-    <div class="log-entry"><span class="log-time">00:05:10</span><span class="log-level-success">[SUCCESS]</span> Created 8 issues</div>
-    <div class="log-entry"><span class="log-time">00:08:30</span><span class="log-level-success">[SUCCESS]</span> Fixer: Security — PR #5 created</div>
-    <div class="log-entry"><span class="log-time">00:08:45</span><span class="log-level-success">[SUCCESS]</span> Fixer: Dead Code — PR #6 created</div>
-    <div class="log-entry"><span class="log-time">00:09:00</span><span class="log-level-success">[SUCCESS]</span> Fixer: Type Safety — PR #7 created</div>
-    <div class="log-entry"><span class="log-time">00:09:01</span><span class="log-level-info">[INFO]</span> === Stage 3: Checking CI status ===</div>
-    <div class="log-entry"><span class="log-time">00:09:30</span><span class="log-level-success">[SUCCESS]</span> PR #5 — CI passed (1 attempt)</div>
-    <div class="log-entry"><span class="log-time">00:09:31</span><span class="log-level-success">[SUCCESS]</span> PR #6 — CI passed (1 attempt)</div>
-    <div class="log-entry"><span class="log-time">00:09:32</span><span class="log-level-warn">[WARN]</span> PR #7 — CI failed, spawning CI fixer</div>
-    <div class="log-entry"><span class="log-time">00:11:00</span><span class="log-level-success">[SUCCESS]</span> PR #7 — CI passed (2 attempts)</div>
-    <div class="log-entry"><span class="log-time">00:11:01</span><span class="log-level-warn">[WARN]</span> PR #8 — CI needs manual review</div>
-    <div class="log-entry"><span class="log-time">00:11:02</span><span class="log-level-success">[SUCCESS]</span> === Pipeline Complete ===</div>
-    <div class="log-entry"><span class="log-time">00:11:02</span><span class="log-level-info">[INFO]</span> Total: 67 findings | 4 PRs | 8 issues | 9 agents | +312/-187 lines</div>
+  <div class="logs-panel">
+    <div class="log-entry"><span class="log-time">00:00:00</span> <span class="log-level-info">[INFO]</span> Starting tech debt scanner for Andrewstein18/superset-devin-demo</div>
+    <div class="log-entry"><span class="log-time">00:00:01</span> <span class="log-level-info">[INFO]</span> Scan targets: superset/utils/, superset-frontend/src/explore/</div>
+    <div class="log-entry"><span class="log-time">00:00:02</span> <span class="log-level-info">[INFO]</span> === Stage 1: Spawning 2 scanner agents ===</div>
+    <div class="log-entry"><span class="log-time">00:00:03</span> <span class="log-level-info">[INFO]</span> Created scanner for superset/utils/ (9cc3d8e9)</div>
+    <div class="log-entry"><span class="log-time">00:00:04</span> <span class="log-level-info">[INFO]</span> Created scanner for superset-frontend/src/explore/ (c53eaa2a)</div>
+    <div class="log-entry"><span class="log-time">00:00:05</span> <span class="log-level-info">[INFO]</span> Waiting for 2 scanner agents...</div>
+    <div class="log-entry"><span class="log-time">00:08:30</span> <span class="log-level-success">[DONE]</span> Scanner superset/utils/ &mdash; 10 issues created, PR #16 opened</div>
+    <div class="log-entry"><span class="log-time">00:08:31</span> <span class="log-level-info">[INFO]</span> Scanner superset-frontend/src/explore/ &mdash; still running</div>
+    <div class="log-entry"><span class="log-time">00:12:00</span> <span class="log-level-success">[DONE]</span> Scanner superset-frontend/src/explore/ complete</div>
+    <div class="log-entry"><span class="log-time">00:12:01</span> <span class="log-level-info">[INFO]</span> Total issues from scanners: 10+</div>
+    <div class="log-entry"><span class="log-time">00:12:02</span> <span class="log-level-info">[INFO]</span> === Stage 2: Spawning fixer agents ===</div>
+    <div class="log-entry"><span class="log-time">00:12:03</span> <span class="log-level-info">[INFO]</span> Creating fixer for each issue...</div>
+    <div class="log-entry"><span class="log-time">00:20:00</span> <span class="log-level-success">[DONE]</span> === Pipeline Complete ===</div>
   </div>
 </div>
 
 <!-- Per-PR Averages -->
 <div class="section">
-  <h2>Per-PR Averages</h2>
+  <h2>Per-Run Averages</h2>
   <div class="metrics-grid" style="grid-template-columns: repeat(4, 1fr);">
-    <div class="metric-card"><div class="metric-value">3.25</div><div class="metric-label">Findings / PR</div></div>
-    <div class="metric-card"><div class="metric-value">100</div><div class="metric-label">Lines Changed / PR</div></div>
-    <div class="metric-card"><div class="metric-value">6</div><div class="metric-label">Comments / PR</div></div>
-    <div class="metric-card"><div class="metric-value">1.5</div><div class="metric-label">CI Attempts / PR</div></div>
+    <div class="metric-card"><div class="metric-value">10</div><div class="metric-label">Issues / Run</div></div>
+    <div class="metric-card"><div class="metric-value">7</div><div class="metric-label">.md Files / Run</div></div>
+    <div class="metric-card"><div class="metric-value">2</div><div class="metric-label">Scanner Agents / Run</div></div>
+    <div class="metric-card"><div class="metric-value">~20m</div><div class="metric-label">Total Runtime</div></div>
   </div>
 </div>
 
 <div class="footer">
-  Tech Debt Scanner &middot; Powered by Devin &middot; Andrewstein18/superset-devin-demo
+  Tech Debt Scanner &middot; Powered by Devin AI &middot; Andrewstein18/superset-devin-demo
 </div>
 
 <script>
-// Load dashboard data from JSON if available
 document.getElementById('timestamp').textContent = new Date().toLocaleString();
 
-// This script loads data from dashboard-data-*.json when available
-// For the demo, the dashboard shows representative data inline
+// Load live data from reports/dashboard-data-*.json when available
 async function loadDashboardData() {
   try {
-    const resp = await fetch('./dashboard-data.json');
+    // Try loading the latest dashboard data file
+    const resp = await fetch('../reports/dashboard-data-latest.json');
     if (!resp.ok) return;
     const data = await resp.json();
-    if (data.metrics) {
-      const m = data.metrics;
-      document.getElementById('m-findings').textContent = m.total_findings || 0;
-      document.getElementById('m-bugs').textContent = m.bugs_found || 0;
-      document.getElementById('m-techdebt').textContent = m.tech_debt_found || 0;
-      document.getElementById('m-prs').textContent = m.total_prs_created || 0;
-      document.getElementById('m-issues').textContent = m.issue_filed_count || 0;
-      document.getElementById('m-agents').textContent = m.total_agents_spawned || 0;
-      document.getElementById('m-comments').textContent = m.total_comments_added || 0;
-      document.getElementById('m-docstrings').textContent = m.total_docstrings_added || 0;
-      document.getElementById('m-mdfiles').textContent = m.total_md_files_created || 0;
-    }
+    document.getElementById('m-findings').textContent = data.total_issues_filed || 0;
+    document.getElementById('m-prs').textContent = data.total_prs_created || 0;
+    document.getElementById('m-agents').textContent = data.agents_spawned || 0;
+    document.getElementById('m-mdfiles').textContent = data.md_files_created || 0;
+    document.getElementById('m-docstrings').textContent = data.docstrings_added || 0;
+    document.getElementById('timestamp').textContent = data.timestamp || new Date().toLocaleString();
   } catch (e) {
-    // Use inline demo data
+    // Use inline data as fallback
   }
 }
 loadDashboardData();
