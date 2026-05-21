@@ -395,9 +395,7 @@ def _save_results(
         report_lines.append("## Issues by Severity")
         report_lines.append("")
         for sev in ["critical", "high", "medium", "low"]:
-            sev_issues = [
-                i for i in issues if i.get("severity", "medium") == sev
-            ]
+            sev_issues = [i for i in issues if i.get("severity", "medium") == sev]
             if sev_issues:
                 report_lines.append(f"### {sev.capitalize()} ({len(sev_issues)})")
                 report_lines.append("")
