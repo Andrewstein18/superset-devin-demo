@@ -22,15 +22,7 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'Scan only — no PRs or issues'
-        type: boolean
-        default: false
-      targets:
-        description: 'Comma-separated directories to scan (empty = defaults)'
-        type: string
-        default: ''
-      skip_docs:
-        description: 'Skip documentation agent'
+        description: 'Scan only — no fixer agents'
         type: boolean
         default: false
 
@@ -58,20 +50,6 @@ jobs:
         run: |
           ARGS=""
           if [ "${{ inputs.dry_run }}" = "true" ]; then
-            ARGS="$ARGS --dry-run"
-          fi
-          if [ "${{ inputs.skip_docs }}" = "true" ]; then
-            ARGS="$ARGS --skip-docs"
-          fi
-          if [ -n "${{ inputs.targets }}" ]; then
-            ARGS="$ARGS --targets '${{ inputs.targets }}'"
+            ARGS="--dry-run"
           fi
           python -m scripts.tech_debt_scanner.orchestrator $ARGS
-
-      - name: Upload reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: tech-debt-reports
-          path: reports/
-          if-no-files-found: ignore
