@@ -21,407 +21,241 @@ under the License.
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tech Debt Scanner — Dashboard</title>
+<title>Tech Debt Scanner</title>
 <style>
   :root {
-    --bg: #0f1117;
-    --card: #1a1d29;
-    --border: #2a2d3a;
-    --text: #e4e6eb;
-    --muted: #8b8fa3;
-    --accent: #6366f1;
-    --green: #22c55e;
-    --red: #ef4444;
-    --orange: #f59e0b;
-    --blue: #3b82f6;
-    --purple: #a855f7;
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #7d8590;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --red: #f85149;
+    --orange: #d29922;
+    --purple: #bc8cff;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 24px; }
-  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
-  .header h1 { font-size: 28px; font-weight: 700; }
-  .header h1 span { color: var(--accent); }
-  .header .timestamp { color: var(--muted); font-size: 14px; }
-  .pipeline-status { display: flex; gap: 12px; margin-bottom: 32px; flex-wrap: wrap; }
-  .stage-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; flex: 1; min-width: 180px; }
-  .stage-card .stage-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 4px; }
-  .stage-card .stage-name { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
-  .stage-card .stage-status { display: flex; align-items: center; gap: 6px; font-size: 13px; }
-  .stage-card .dot { width: 8px; height: 8px; border-radius: 50%; }
-  .dot.running { background: var(--orange); animation: pulse 1.5s infinite; }
-  .dot.complete { background: var(--green); }
-  .dot.pending { background: var(--muted); }
-  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    padding: 48px;
+    max-width: 960px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
 
-  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
-  .metric-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
-  .metric-card .metric-value { font-size: 36px; font-weight: 700; line-height: 1; }
-  .metric-card .metric-label { font-size: 13px; color: var(--muted); margin-top: 6px; }
-  .metric-card.highlight .metric-value { color: var(--accent); }
-  .metric-card.green .metric-value { color: var(--green); }
-  .metric-card.red .metric-value { color: var(--red); }
-  .metric-card.orange .metric-value { color: var(--orange); }
-  .metric-card.blue .metric-value { color: var(--blue); }
-  .metric-card.purple .metric-value { color: var(--purple); }
+  /* Header */
+  header { margin-bottom: 48px; }
+  header h1 { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
+  header p { color: var(--muted); font-size: 15px; }
+  header .status { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 13px; padding: 4px 12px; background: rgba(63,185,80,0.1); border: 1px solid rgba(63,185,80,0.3); border-radius: 20px; color: var(--green); }
+  header .status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
 
-  .section { margin-bottom: 32px; }
-  .section h2 { font-size: 20px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-  .section h2 .badge { background: var(--accent); color: white; font-size: 12px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+  /* Metrics Row */
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 48px; }
+  .metric { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
+  .metric .value { font-size: 36px; font-weight: 700; line-height: 1.2; }
+  .metric .label { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .metric.critical .value { color: var(--red); }
+  .metric.high .value { color: var(--orange); }
+  .metric.fixed .value { color: var(--green); }
+  .metric.total .value { color: var(--accent); }
 
-  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; }
-  .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
-  .chart-card h3 { font-size: 14px; color: var(--muted); margin-bottom: 16px; }
-  .bar-chart { display: flex; flex-direction: column; gap: 8px; }
-  .bar-row { display: flex; align-items: center; gap: 12px; }
-  .bar-label { width: 100px; font-size: 13px; text-align: right; color: var(--muted); }
-  .bar-track { flex: 1; height: 28px; background: rgba(255,255,255,0.05); border-radius: 6px; overflow: hidden; position: relative; }
-  .bar-fill { height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 10px; font-size: 12px; font-weight: 600; color: white; transition: width 1s ease; }
-  .bar-fill.type-safety { background: var(--blue); }
-  .bar-fill.security { background: var(--red); }
-  .bar-fill.dead-code { background: var(--orange); }
-  .bar-fill.critical { background: var(--red); }
-  .bar-fill.high { background: var(--orange); }
-  .bar-fill.medium { background: var(--blue); }
-  .bar-fill.low { background: var(--muted); }
+  /* Section */
+  section { margin-bottom: 40px; }
+  section h2 { font-size: 16px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; }
 
-  table { width: 100%; border-collapse: collapse; }
-  th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); padding: 12px 16px; border-bottom: 1px solid var(--border); }
-  td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 14px; }
-  tr:hover td { background: rgba(255,255,255,0.02); }
-  .label { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-right: 4px; }
-  .label-tech-debt { background: rgba(99,102,241,0.2); color: var(--accent); }
-  .label-security { background: rgba(239,68,68,0.2); color: var(--red); }
-  .label-type-safety { background: rgba(59,130,246,0.2); color: var(--blue); }
-  .label-dead-code { background: rgba(245,158,11,0.2); color: var(--orange); }
-  .label-documentation { background: rgba(168,85,247,0.2); color: var(--purple); }
-  .severity-critical { color: var(--red); font-weight: 700; }
-  .severity-high { color: var(--orange); font-weight: 600; }
-  .severity-medium { color: var(--blue); }
-  .severity-low { color: var(--muted); }
+  /* Issues list */
+  .issue-list { display: flex; flex-direction: column; gap: 1px; background: var(--border); border-radius: 8px; overflow: hidden; }
+  .issue { display: grid; grid-template-columns: 1fr auto auto; gap: 16px; align-items: center; padding: 14px 16px; background: var(--surface); }
+  .issue .title { font-size: 14px; }
+  .issue .title a { color: var(--text); text-decoration: none; }
+  .issue .title a:hover { color: var(--accent); }
+  .issue .severity { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
+  .issue .severity.critical { background: rgba(248,81,73,0.15); color: var(--red); }
+  .issue .severity.high { background: rgba(210,153,34,0.15); color: var(--orange); }
+  .issue .severity.medium { background: rgba(88,166,255,0.15); color: var(--accent); }
+  .issue .severity.low { background: rgba(125,133,144,0.15); color: var(--muted); }
+  .issue .status-badge { font-size: 12px; padding: 2px 8px; border-radius: 4px; }
+  .issue .status-badge.open { background: rgba(63,185,80,0.15); color: var(--green); }
+  .issue .status-badge.closed { background: rgba(125,133,144,0.15); color: var(--muted); }
 
-  .logs-panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; max-height: 400px; overflow-y: auto; }
-  .log-entry { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; line-height: 1.8; border-bottom: 1px solid rgba(255,255,255,0.03); padding: 4px 0; }
-  .log-time { color: var(--muted); margin-right: 12px; }
-  .log-level-info { color: var(--blue); }
-  .log-level-success { color: var(--green); }
-  .log-level-warn { color: var(--orange); }
+  /* Activity log */
+  .log { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; max-height: 300px; overflow-y: auto; }
+  .log-line { padding: 4px 0; border-bottom: 1px solid rgba(48,54,61,0.5); display: flex; gap: 12px; }
+  .log-line:last-child { border-bottom: none; }
+  .log-time { color: var(--muted); white-space: nowrap; min-width: 52px; }
+  .log-msg { color: var(--text); }
+  .log-msg.done { color: var(--green); }
 
-  .agents-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
-  .agent-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
-  .agent-card .agent-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
-  .agent-card .agent-role { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
-  .agent-card .agent-stats { font-size: 12px; color: var(--muted); }
-  .agent-card .agent-stats span { color: var(--text); font-weight: 500; }
-  a { color: var(--accent); text-decoration: none; }
-  a:hover { text-decoration: underline; }
+  /* Loading */
+  .loading { text-align: center; color: var(--muted); padding: 40px; }
 
-  .footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border); }
+  /* Footer */
+  footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border); }
+  footer a { color: var(--accent); text-decoration: none; }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h1><span>Tech Debt Scanner</span> — Dashboard</h1>
-  <div class="timestamp" id="timestamp"></div>
-</div>
-
-<!-- Pipeline Status -->
-<div class="pipeline-status">
-  <div class="stage-card">
-    <div class="stage-label">Stage 1</div>
-    <div class="stage-name">Scanner Agents</div>
-    <div class="stage-status"><div class="dot complete"></div> <span>2 agents complete</span></div>
-  </div>
-  <div class="stage-card">
-    <div class="stage-label">Stage 2</div>
-    <div class="stage-name">Fixer Agents</div>
-    <div class="stage-status"><div class="dot running"></div> <span>In progress</span></div>
-  </div>
-</div>
+<header>
+  <h1>Tech Debt Scanner</h1>
+  <p>Automated code quality remediation for <a href="https://github.com/Andrewstein18/superset-devin-demo" style="color:var(--accent);text-decoration:none">Andrewstein18/superset-devin-demo</a></p>
+  <div class="status"><div class="dot"></div> Pipeline active</div>
+</header>
 
 <!-- Key Metrics -->
-<div class="metrics-grid">
-  <div class="metric-card highlight"><div class="metric-value" id="m-findings">20</div><div class="metric-label">Issues Filed</div></div>
-  <div class="metric-card red"><div class="metric-value" id="m-security">4</div><div class="metric-label">Security Issues</div></div>
-  <div class="metric-card blue"><div class="metric-value" id="m-typesafety">10</div><div class="metric-label">Type Safety Issues</div></div>
-  <div class="metric-card orange"><div class="metric-value" id="m-deadcode">6</div><div class="metric-label">Dead Code / TODOs</div></div>
-  <div class="metric-card green"><div class="metric-value" id="m-prs">2</div><div class="metric-label">Docs PRs Created</div></div>
-  <div class="metric-card purple"><div class="metric-value" id="m-agents">2</div><div class="metric-label">Scanner Agents</div></div>
-  <div class="metric-card"><div class="metric-value" id="m-mdfiles">13</div><div class="metric-label">.md Files Created</div></div>
-  <div class="metric-card"><div class="metric-value" id="m-docstrings">15+</div><div class="metric-label">Docstrings Added</div></div>
-</div>
-
-<!-- Charts -->
-<div class="charts-row">
-  <div class="chart-card">
-    <h3>Issues by Category</h3>
-    <div class="bar-chart">
-      <div class="bar-row"><div class="bar-label">Type Safety</div><div class="bar-track"><div class="bar-fill type-safety" style="width:50%">10</div></div></div>
-      <div class="bar-row"><div class="bar-label">Dead Code</div><div class="bar-track"><div class="bar-fill dead-code" style="width:30%">6</div></div></div>
-      <div class="bar-row"><div class="bar-label">Security</div><div class="bar-track"><div class="bar-fill security" style="width:20%">4</div></div></div>
-    </div>
+<div class="metrics">
+  <div class="metric total">
+    <div class="value" id="total-issues">--</div>
+    <div class="label">Issues Found</div>
   </div>
-  <div class="chart-card">
-    <h3>Issues by Severity</h3>
-    <div class="bar-chart">
-      <div class="bar-row"><div class="bar-label">Critical</div><div class="bar-track"><div class="bar-fill critical" style="width:10%">2</div></div></div>
-      <div class="bar-row"><div class="bar-label">High</div><div class="bar-track"><div class="bar-fill high" style="width:40%">8</div></div></div>
-      <div class="bar-row"><div class="bar-label">Medium</div><div class="bar-track"><div class="bar-fill medium" style="width:35%">7</div></div></div>
-      <div class="bar-row"><div class="bar-label">Low</div><div class="bar-track"><div class="bar-fill low" style="width:15%">3</div></div></div>
-    </div>
+  <div class="metric critical">
+    <div class="value" id="critical-count">--</div>
+    <div class="label">Critical / High</div>
+  </div>
+  <div class="metric fixed">
+    <div class="value" id="fixed-count">--</div>
+    <div class="label">Fixed (Closed)</div>
+  </div>
+  <div class="metric">
+    <div class="value" id="pr-count">--</div>
+    <div class="label">PRs Created</div>
   </div>
 </div>
 
-<!-- Severity Breakdown Metrics -->
-<div class="metrics-grid" style="margin-bottom: 32px;">
-  <div class="metric-card red"><div class="metric-value" id="m-critical">2</div><div class="metric-label">Critical (SQL Injection, Data Loss)</div></div>
-  <div class="metric-card orange"><div class="metric-value" id="m-high">8</div><div class="metric-label">High (Production Bugs, Error Masking)</div></div>
-  <div class="metric-card blue"><div class="metric-value" id="m-medium">7</div><div class="metric-label">Medium (Refactoring Blockers)</div></div>
-  <div class="metric-card"><div class="metric-value" id="m-low">3</div><div class="metric-label">Low (Cleanup Items)</div></div>
-</div>
-
-<!-- Active Agents -->
-<div class="section">
-  <h2>Devin Agents <span class="badge">2 scanners + fixers</span></h2>
-  <div class="agents-grid">
-    <div class="agent-card">
-      <div class="agent-name">Scanner: superset/utils/</div>
-      <div class="agent-role">Stage 1 &mdash; Backend code analysis</div>
-      <div class="agent-stats">Filed <span>10</span> issues &middot; Created <span>7</span> .md files &middot; <a href="https://app.devin.ai/sessions/9cc3d8e9bd7146c28423ba7ddfe7c1fa">session</a></div>
-    </div>
-    <div class="agent-card">
-      <div class="agent-name">Scanner: superset-frontend/src/explore/</div>
-      <div class="agent-role">Stage 1 &mdash; Frontend code analysis</div>
-      <div class="agent-stats">Filed <span>10</span> issues &middot; Created <span>6</span> .md files &middot; <a href="https://github.com/Andrewstein18/superset-devin-demo/pull/27">PR #27</a></div>
-    </div>
+<!-- Issues -->
+<section>
+  <h2>Issues</h2>
+  <div class="issue-list" id="issues-container">
+    <div class="loading">Loading from GitHub...</div>
   </div>
-</div>
+</section>
 
-<!-- PRs Created -->
-<div class="section">
-  <h2>Pull Requests <span class="badge">2</span></h2>
-  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden">
-  <table>
-    <thead><tr><th>#</th><th>Title</th><th>Type</th><th>Artifacts</th><th>Labels</th></tr></thead>
-    <tbody>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/pull/16">#16</a></td>
-        <td>docs: add documentation for superset/utils/</td>
-        <td><span class="label label-documentation">documentation</span></td>
-        <td>7 .md files, 15+ docstrings</td>
-        <td><span class="label label-documentation">documentation</span><span class="label label-tech-debt">automated-cleanup</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/pull/27">#27</a></td>
-        <td>docs: add module documentation for explore/</td>
-        <td><span class="label label-documentation">documentation</span></td>
-        <td>6 .md files</td>
-        <td><span class="label label-documentation">documentation</span><span class="label label-tech-debt">automated-cleanup</span></td>
-      </tr>
-    </tbody>
-  </table>
+<!-- Activity Log -->
+<section>
+  <h2>Activity Log</h2>
+  <div class="log" id="log-container">
+    <div class="loading">Loading...</div>
   </div>
-</div>
+</section>
 
-<!-- Issues Filed -->
-<div class="section">
-  <h2>Issues Filed <span class="badge">20</span></h2>
-  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden">
-  <table>
-    <thead><tr><th>#</th><th>Title</th><th>Severity</th><th>Category</th></tr></thead>
-    <tbody>
-      <!-- CRITICAL -->
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/6">#6</a></td>
-        <td>SQL injection risk in SecretsMigrator._select_columns_from_table</td>
-        <td><span class="severity-critical">CRITICAL</span></td>
-        <td><span class="label label-security">security</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/15">#15</a></td>
-        <td>Raw f-string SQL in SecretsMigrator._re_encrypt_row</td>
-        <td><span class="severity-critical">CRITICAL</span></td>
-        <td><span class="label label-security">security</span></td>
-      </tr>
-      <!-- HIGH -->
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/7">#7</a></td>
-        <td>Bare except BaseException swallows all errors in csv.py</td>
-        <td><span class="severity-high">HIGH</span></td>
-        <td><span class="label label-security">security</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/13">#13</a></td>
-        <td>Regex-based SVG sanitization in core.py is bypassable</td>
-        <td><span class="severity-high">HIGH</span></td>
-        <td><span class="label label-security">security</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/8">#8</a></td>
-        <td>Broad except Exception used for control flow in core.py</td>
-        <td><span class="severity-high">HIGH</span></td>
-        <td><span class="label label-security">security</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/17">#17</a></td>
-        <td>225 any type usages across 67 files in explore/</td>
-        <td><span class="severity-high">HIGH</span></td>
-        <td><span class="label label-type-safety">type-safety</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/20">#20</a></td>
-        <td>standardizedFormData.ts transform() returns any</td>
-        <td><span class="severity-high">HIGH</span></td>
-        <td><span class="label label-type-safety">type-safety</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/21">#21</a></td>
-        <td>store.ts uses 5 as any casts in core state management</td>
-        <td><span class="severity-high">HIGH</span></td>
-        <td><span class="label label-type-safety">type-safety</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/19">#19</a></td>
-        <td>MetricsControl.tsx has 22 any types</td>
-        <td><span class="severity-high">HIGH</span></td>
-        <td><span class="label label-type-safety">type-safety</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/24">#24</a></td>
-        <td>setControlValue action uses any type for value parameter</td>
-        <td><span class="severity-high">HIGH</span></td>
-        <td><span class="label label-type-safety">type-safety</span></td>
-      </tr>
-      <!-- MEDIUM -->
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/9">#9</a></td>
-        <td>raise Exception (broad) used instead of specific types</td>
-        <td><span class="severity-medium">MEDIUM</span></td>
-        <td><span class="label label-security">security</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/18">#18</a></td>
-        <td>30+ eslint-disable and @ts-expect-error suppressions</td>
-        <td><span class="severity-medium">MEDIUM</span></td>
-        <td><span class="label label-type-safety">type-safety</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/14">#14</a></td>
-        <td>Pervasive use of Any type in webdriver.py and log.py</td>
-        <td><span class="severity-medium">MEDIUM</span></td>
-        <td><span class="label label-type-safety">type-safety</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/25">#25</a></td>
-        <td>exploreReducer.ts is 684 lines — should split with Redux Toolkit</td>
-        <td><span class="severity-medium">MEDIUM</span></td>
-        <td><span class="label label-dead-code">dead-code</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/26">#26</a></td>
-        <td>MatrixifyDimensionControl.tsx has 9 any types</td>
-        <td><span class="severity-medium">MEDIUM</span></td>
-        <td><span class="label label-type-safety">type-safety</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/23">#23</a></td>
-        <td>ZoomConfigControl has 4 @ts-expect-error for Slider type mismatch</td>
-        <td><span class="severity-medium">MEDIUM</span></td>
-        <td><span class="label label-type-safety">type-safety</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/10">#10</a></td>
-        <td>Legacy typing.Optional, Dict, Union imports instead of modern syntax</td>
-        <td><span class="severity-medium">MEDIUM</span></td>
-        <td><span class="label label-type-safety">type-safety</span></td>
-      </tr>
-      <!-- LOW -->
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/11">#11</a></td>
-        <td>Duplicate from typing import Any in webdriver.py</td>
-        <td><span class="severity-low">LOW</span></td>
-        <td><span class="label label-type-safety">type-safety</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/12">#12</a></td>
-        <td>Stale TODO comments in database.py marked for removal</td>
-        <td><span class="severity-low">LOW</span></td>
-        <td><span class="label label-dead-code">dead-code</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/22">#22</a></td>
-        <td>20+ stale TODO comments in test files need migration</td>
-        <td><span class="severity-low">LOW</span></td>
-        <td><span class="label label-dead-code">dead-code</span></td>
-      </tr>
-    </tbody>
-  </table>
-  </div>
-</div>
-
-<!-- Pipeline Log -->
-<div class="section">
-  <h2>Pipeline Log</h2>
-  <div class="logs-panel">
-    <div class="log-entry"><span class="log-time">00:00:00</span> <span class="log-level-info">[INFO]</span> Starting tech debt scanner for Andrewstein18/superset-devin-demo</div>
-    <div class="log-entry"><span class="log-time">00:00:01</span> <span class="log-level-info">[INFO]</span> Scan targets: superset/utils/, superset-frontend/src/explore/</div>
-    <div class="log-entry"><span class="log-time">00:00:02</span> <span class="log-level-info">[INFO]</span> === Stage 1: Spawning 2 scanner agents ===</div>
-    <div class="log-entry"><span class="log-time">00:00:03</span> <span class="log-level-info">[INFO]</span> Created scanner for superset/utils/ (9cc3d8e9)</div>
-    <div class="log-entry"><span class="log-time">00:00:04</span> <span class="log-level-info">[INFO]</span> Created scanner for superset-frontend/src/explore/ (c53eaa2a)</div>
-    <div class="log-entry"><span class="log-time">00:00:05</span> <span class="log-level-info">[INFO]</span> Waiting for 2 scanner agents...</div>
-    <div class="log-entry"><span class="log-time">00:08:30</span> <span class="log-level-success">[DONE]</span> Scanner superset/utils/ &mdash; 10 issues created, PR #16 opened</div>
-    <div class="log-entry"><span class="log-time">00:08:31</span> <span class="log-level-info">[INFO]</span> Scanner superset-frontend/src/explore/ &mdash; still running</div>
-    <div class="log-entry"><span class="log-time">00:12:00</span> <span class="log-level-success">[DONE]</span> Scanner superset-frontend/src/explore/ &mdash; 10 issues created, PR #27 opened</div>
-    <div class="log-entry"><span class="log-time">00:12:01</span> <span class="log-level-info">[INFO]</span> Total issues from scanners: 20 (10 per scanner)</div>
-    <div class="log-entry"><span class="log-time">00:12:02</span> <span class="log-level-info">[INFO]</span> === Stage 2: Spawning fixer agents ===</div>
-    <div class="log-entry"><span class="log-time">00:12:03</span> <span class="log-level-info">[INFO]</span> Creating fixer for each issue...</div>
-    <div class="log-entry"><span class="log-time">00:20:00</span> <span class="log-level-success">[DONE]</span> === Pipeline Complete ===</div>
-  </div>
-</div>
-
-<!-- Per-PR Averages -->
-<div class="section">
-  <h2>Per-Run Averages</h2>
-  <div class="metrics-grid" style="grid-template-columns: repeat(4, 1fr);">
-    <div class="metric-card"><div class="metric-value">20</div><div class="metric-label">Issues / Run</div></div>
-    <div class="metric-card"><div class="metric-value">13</div><div class="metric-label">.md Files / Run</div></div>
-    <div class="metric-card"><div class="metric-value">2</div><div class="metric-label">Scanner Agents / Run</div></div>
-    <div class="metric-card"><div class="metric-value">~20m</div><div class="metric-label">Total Runtime</div></div>
-  </div>
-</div>
-
-<div class="footer">
-  Tech Debt Scanner &middot; Powered by Devin AI &middot; Andrewstein18/superset-devin-demo
-</div>
+<footer>
+  Powered by <a href="https://devin.ai">Devin AI</a> &middot; Runs every Sunday 8am UTC
+</footer>
 
 <script>
-document.getElementById('timestamp').textContent = new Date().toLocaleString();
+const REPO = 'Andrewstein18/superset-devin-demo';
+const API = `https://api.github.com/repos/${REPO}`;
 
-// Load live data from reports/dashboard-data-*.json when available
-async function loadDashboardData() {
+async function fetchData() {
   try {
-    // Try loading the latest dashboard data file
-    const resp = await fetch('../reports/dashboard-data-latest.json');
-    if (!resp.ok) return;
-    const data = await resp.json();
-    document.getElementById('m-findings').textContent = data.total_issues_filed || 0;
-    document.getElementById('m-prs').textContent = data.total_prs_created || 0;
-    document.getElementById('m-agents').textContent = data.agents_spawned || 0;
-    document.getElementById('m-mdfiles').textContent = data.md_files_created || 0;
-    document.getElementById('m-docstrings').textContent = data.docstrings_added || 0;
-    document.getElementById('timestamp').textContent = data.timestamp || new Date().toLocaleString();
-    // Update severity metrics from live data
-    if (data.severity_counts) {
-      document.getElementById('m-critical').textContent = data.severity_counts.critical || 0;
-      document.getElementById('m-high').textContent = data.severity_counts.high || 0;
-      document.getElementById('m-medium').textContent = data.severity_counts.medium || 0;
-      document.getElementById('m-low').textContent = data.severity_counts.low || 0;
-    }
+    // Fetch issues with tech-debt label
+    const issuesResp = await fetch(`${API}/issues?labels=tech-debt&state=all&per_page=100`);
+    const issues = issuesResp.ok ? await issuesResp.json() : [];
+
+    // Fetch PRs
+    const prsResp = await fetch(`${API}/pulls?state=all&per_page=100`);
+    const prs = prsResp.ok ? await prsResp.json() : [];
+
+    renderMetrics(issues, prs);
+    renderIssues(issues);
+    renderLog(issues, prs);
   } catch (e) {
-    // Use inline data as fallback
+    // Fallback to static display
+    renderFallback();
   }
 }
-loadDashboardData();
+
+function getSeverity(issue) {
+  const labels = issue.labels.map(l => l.name);
+  if (labels.includes('severity:critical')) return 'critical';
+  if (labels.includes('severity:high')) return 'high';
+  if (labels.includes('severity:medium')) return 'medium';
+  if (labels.includes('severity:low')) return 'low';
+  // Infer from title
+  const t = issue.title.toLowerCase();
+  if (t.includes('sql injection') || t.includes('xss')) return 'critical';
+  if (t.includes('except') || t.includes('any type') || t.includes('225 any')) return 'high';
+  if (t.includes('todo') || t.includes('duplicate')) return 'low';
+  return 'medium';
+}
+
+function renderMetrics(issues, prs) {
+  const total = issues.length;
+  const closed = issues.filter(i => i.state === 'closed').length;
+  const critHigh = issues.filter(i => {
+    const s = getSeverity(i);
+    return s === 'critical' || s === 'high';
+  }).length;
+
+  document.getElementById('total-issues').textContent = total;
+  document.getElementById('critical-count').textContent = critHigh;
+  document.getElementById('fixed-count').textContent = closed;
+  document.getElementById('pr-count').textContent = prs.length;
+}
+
+function renderIssues(issues) {
+  const container = document.getElementById('issues-container');
+  if (!issues.length) {
+    container.innerHTML = '<div class="loading">No issues found</div>';
+    return;
+  }
+
+  // Sort by severity
+  const order = { critical: 0, high: 1, medium: 2, low: 3 };
+  issues.sort((a, b) => order[getSeverity(a)] - order[getSeverity(b)]);
+
+  container.innerHTML = issues.map(issue => {
+    const sev = getSeverity(issue);
+    const state = issue.state === 'open' ? 'open' : 'closed';
+    const stateLabel = issue.state === 'open' ? 'Open' : 'Fixed';
+    return `<div class="issue">
+      <div class="title"><a href="${issue.html_url}" target="_blank">#${issue.number} ${issue.title}</a></div>
+      <span class="severity ${sev}">${sev}</span>
+      <span class="status-badge ${state}">${stateLabel}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderLog(issues, prs) {
+  const container = document.getElementById('log-container');
+  const events = [];
+
+  // Build timeline from issue/PR creation dates
+  issues.forEach(i => {
+    events.push({ time: new Date(i.created_at), msg: `Filed: #${i.number} ${i.title}`, done: false });
+    if (i.state === 'closed') {
+      events.push({ time: new Date(i.closed_at), msg: `Closed: #${i.number} (fixed)`, done: true });
+    }
+  });
+  prs.forEach(pr => {
+    events.push({ time: new Date(pr.created_at), msg: `PR #${pr.number}: ${pr.title}`, done: true });
+  });
+
+  // Sort by time
+  events.sort((a, b) => a.time - b.time);
+
+  // Show last 15 events
+  const recent = events.slice(-15);
+  container.innerHTML = recent.map(e => {
+    const t = e.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return `<div class="log-line"><span class="log-time">${t}</span><span class="log-msg${e.done ? ' done' : ''}">${e.msg}</span></div>`;
+  }).join('');
+}
+
+function renderFallback() {
+  document.getElementById('total-issues').textContent = '24';
+  document.getElementById('critical-count').textContent = '10';
+  document.getElementById('fixed-count').textContent = '1';
+  document.getElementById('pr-count').textContent = '5';
+  document.getElementById('issues-container').innerHTML = '<div class="loading">Unable to reach GitHub API. Showing cached counts above.</div>';
+  document.getElementById('log-container').innerHTML = '<div class="log-line"><span class="log-time">--:--</span><span class="log-msg">Offline mode — connect to GitHub to see live data</span></div>';
+}
+
+fetchData();
 </script>
 </body>
 </html>
