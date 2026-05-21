@@ -148,13 +148,10 @@ class PipelineMetrics:
     def compute_averages(self) -> None:
         """Compute per-PR averages from collected records."""
         if self.total_prs_created > 0:
-            self.avg_findings_per_pr = (
-                self.auto_fix_count / self.total_prs_created
-            )
+            self.avg_findings_per_pr = self.auto_fix_count / self.total_prs_created
             self.avg_lines_changed_per_pr = (
-                (self.total_lines_added + self.total_lines_removed)
-                / self.total_prs_created
-            )
+                self.total_lines_added + self.total_lines_removed
+            ) / self.total_prs_created
 
         ci_attempts = [pr.ci_attempts for pr in self.prs]
         ci_passes = [pr.ci_passed for pr in self.prs]

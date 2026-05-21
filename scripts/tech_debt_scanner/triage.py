@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import logging
 
-from scripts.tech_debt_scanner.models import Finding, Severity, TriageResult
+from .models import Finding, Severity, TriageResult
 
 logger = logging.getLogger("tech_debt_scanner.triage")
 

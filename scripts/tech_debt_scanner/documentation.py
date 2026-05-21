@@ -24,9 +24,9 @@ import os
 import time
 import urllib.request
 
-from scripts.tech_debt_scanner.config import PipelineConfig
-from scripts.tech_debt_scanner.models import DocResult
-from scripts.tech_debt_scanner.prompts import build_documentation_prompt
+from .config import PipelineConfig
+from .models import DocResult
+from .prompts import build_documentation_prompt
 
 logger = logging.getLogger("tech_debt_scanner.documentation")
 
@@ -51,7 +51,7 @@ def run_documentation(config: PipelineConfig) -> DocResult:
         }
     ).encode()
 
-    req = urllib.request.Request(
+    req = urllib.request.Request(  # noqa: S310
         f"{DEVIN_API_BASE}/sessions",
         data=payload,
         headers={
@@ -62,7 +62,7 @@ def run_documentation(config: PipelineConfig) -> DocResult:
     )
 
     try:
-        with urllib.request.urlopen(req) as resp:
+        with urllib.request.urlopen(req) as resp:  # noqa: S310
             session = json.loads(resp.read().decode())
     except Exception:
         logger.exception("Failed to create documentation session")
@@ -87,12 +87,12 @@ def _wait_for_session(
     start = time.time()
 
     while time.time() - start < timeout:
-        req = urllib.request.Request(
+        req = urllib.request.Request(  # noqa: S310
             f"{DEVIN_API_BASE}/sessions/{session_id}",
             headers={"Authorization": f"Bearer {api_token}"},
         )
         try:
-            with urllib.request.urlopen(req) as resp:
+            with urllib.request.urlopen(req) as resp:  # noqa: S310
                 data = json.loads(resp.read().decode())
                 if data.get("status_enum", "") in settled_states:
                     return
@@ -106,12 +106,12 @@ def _wait_for_session(
 
 def _parse_doc_result(session_id: str, api_token: str) -> DocResult:
     """Parse documentation results from session output."""
-    req = urllib.request.Request(
+    req = urllib.request.Request(  # noqa: S310
         f"{DEVIN_API_BASE}/sessions/{session_id}",
         headers={"Authorization": f"Bearer {api_token}"},
     )
     try:
-        with urllib.request.urlopen(req) as resp:
+        with urllib.request.urlopen(req) as resp:  # noqa: S310
             data = json.loads(resp.read().decode())
     except Exception:
         logger.exception("Failed to read doc result from %s", session_id[:8])

@@ -25,10 +25,9 @@ import time
 import urllib.request
 from dataclasses import dataclass, field
 
-from scripts.tech_debt_scanner.config import PipelineConfig
-from scripts.tech_debt_scanner.models import Finding
-from scripts.tech_debt_scanner.prompts import (
-    SCANNER_OUTPUT_SCHEMA,
+from .config import PipelineConfig
+from .models import Finding
+from .prompts import (
     build_scanner_prompt,
 )
 
@@ -90,7 +89,9 @@ def run_scanners(config: PipelineConfig) -> ScannerResult:
             timeout=config.gather_timeout_seconds,
         )
 
-        for session_data, category in zip(settled, config.scanner_categories):
+        for session_data, category in zip(
+            settled, config.scanner_categories, strict=False
+        ):
             findings = _extract_findings(session_data, category.tag)
             result.findings.extend(findings)
 
@@ -106,7 +107,7 @@ def _create_session(
 ) -> dict | None:
     """Create a Devin session via the API."""
     payload = json.dumps({"prompt": prompt, "title": title, "tags": tags}).encode()
-    req = urllib.request.Request(
+    req = urllib.request.Request(  # noqa: S310
         f"{DEVIN_API_BASE}/sessions",
         data=payload,
         headers={
@@ -116,7 +117,7 @@ def _create_session(
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req) as resp:
+        with urllib.request.urlopen(req) as resp:  # noqa: S310
             return json.loads(resp.read().decode())
     except Exception:
         logger.exception("Failed to create session: %s", title)
@@ -154,12 +155,12 @@ def _poll_sessions(
 
 def _get_session_status(session_id: str, api_token: str) -> dict | None:
     """Get session status from the API."""
-    req = urllib.request.Request(
+    req = urllib.request.Request(  # noqa: S310
         f"{DEVIN_API_BASE}/sessions/{session_id}",
         headers={"Authorization": f"Bearer {api_token}"},
     )
     try:
-        with urllib.request.urlopen(req) as resp:
+        with urllib.request.urlopen(req) as resp:  # noqa: S310
             return json.loads(resp.read().decode())
     except Exception:
         logger.exception("Failed to get session status: %s", session_id[:8])
@@ -209,7 +210,9 @@ def _demo_scanner_result(config: PipelineConfig) -> ScannerResult:
             line=183,
             category="security",
             severity="critical",
-            description="RLS parse failure silently returns empty list — may expose data",
+            description=(
+                "RLS parse failure silently returns empty list -- may expose data"
+            ),
             suggested_fix=None,
         ),
         Finding(

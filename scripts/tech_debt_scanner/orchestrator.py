@@ -31,19 +31,19 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from scripts.tech_debt_scanner.ci_fixer import run_ci_fixers
-from scripts.tech_debt_scanner.config import PipelineConfig
-from scripts.tech_debt_scanner.documentation import run_documentation
-from scripts.tech_debt_scanner.fixer import run_fixers
-from scripts.tech_debt_scanner.models import PipelineMetrics
-from scripts.tech_debt_scanner.report import (
+from .ci_fixer import run_ci_fixers
+from .config import PipelineConfig
+from .documentation import run_documentation
+from .fixer import run_fixers
+from .models import PipelineMetrics
+from .report import (
     collect_metrics,
     generate_dashboard_data,
     generate_report,
     save_report,
 )
-from scripts.tech_debt_scanner.scanner import run_scanners
-from scripts.tech_debt_scanner.triage import triage_findings
+from .scanner import run_scanners
+from .triage import triage_findings
 
 logging.basicConfig(
     level=logging.INFO,

@@ -23,9 +23,9 @@ import logging
 import os
 import urllib.request
 
-from scripts.tech_debt_scanner.config import PipelineConfig
-from scripts.tech_debt_scanner.models import PRRecord
-from scripts.tech_debt_scanner.prompts import build_ci_fixer_prompt
+from .config import PipelineConfig
+from .models import PRRecord
+from .prompts import build_ci_fixer_prompt
 
 logger = logging.getLogger("tech_debt_scanner.ci_fixer")
 
@@ -100,7 +100,7 @@ def _get_ci_logs(pr_number: int, repo: str) -> str:
     if not github_token:
         return ""
 
-    req = urllib.request.Request(
+    req = urllib.request.Request(  # noqa: S310
         f"https://api.github.com/repos/{repo}/pulls/{pr_number}/commits",
         headers={
             "Authorization": f"token {github_token}",
@@ -109,20 +109,20 @@ def _get_ci_logs(pr_number: int, repo: str) -> str:
     )
 
     try:
-        with urllib.request.urlopen(req) as resp:
+        with urllib.request.urlopen(req) as resp:  # noqa: S310
             commits = json.loads(resp.read().decode())
             if not commits:
                 return ""
             last_sha = commits[-1]["sha"]
 
-        req = urllib.request.Request(
+        req = urllib.request.Request(  # noqa: S310
             f"https://api.github.com/repos/{repo}/commits/{last_sha}/check-runs",
             headers={
                 "Authorization": f"token {github_token}",
                 "Accept": "application/vnd.github.v3+json",
             },
         )
-        with urllib.request.urlopen(req) as resp:
+        with urllib.request.urlopen(req) as resp:  # noqa: S310
             check_data = json.loads(resp.read().decode())
 
         failures = [
@@ -134,7 +134,8 @@ def _get_ci_logs(pr_number: int, repo: str) -> str:
             return ""
 
         return "\n".join(
-            f"Check: {cr['name']}\nOutput: {cr.get('output', {}).get('summary', 'No details')}"
+            f"Check: {cr['name']}\n"
+            f"Output: {cr.get('output', {}).get('summary', 'No details')}"
             for cr in failures
         )
     except Exception:
@@ -157,7 +158,7 @@ def _create_ci_fixer_session(
         }
     ).encode()
 
-    req = urllib.request.Request(
+    req = urllib.request.Request(  # noqa: S310
         f"{DEVIN_API_BASE}/sessions",
         data=payload,
         headers={
@@ -167,7 +168,7 @@ def _create_ci_fixer_session(
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req) as resp:
+        with urllib.request.urlopen(req) as resp:  # noqa: S310
             return json.loads(resp.read().decode())
     except Exception:
         logger.exception("Failed to create CI fixer for PR #%d", pr_number)

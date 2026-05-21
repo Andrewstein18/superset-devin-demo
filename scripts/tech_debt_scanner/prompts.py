@@ -60,7 +60,7 @@ Write your findings as JSON to a file called `/home/ubuntu/scanner_output.json`:
     {{
       "file": "superset/utils/core.py",
       "line": 42,
-      "category": "{category_name.lower().replace(' ', '-')}",
+      "category": "{category_name.lower().replace(" ", "-")}",
       "severity": "high",
       "description": "Brief description of the issue",
       "suggested_fix": "How to fix it (or null if complex)"

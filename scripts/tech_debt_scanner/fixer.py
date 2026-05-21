@@ -21,13 +21,12 @@ from __future__ import annotations
 import json
 import logging
 import os
-import time
 import urllib.request
 from dataclasses import dataclass, field
 
-from scripts.tech_debt_scanner.config import PipelineConfig
-from scripts.tech_debt_scanner.models import Finding, IssueRecord, PRRecord
-from scripts.tech_debt_scanner.prompts import build_fixer_prompt
+from .config import PipelineConfig
+from .models import Finding, IssueRecord, PRRecord
+from .prompts import build_fixer_prompt
 
 logger = logging.getLogger("tech_debt_scanner.fixer")
 
@@ -153,7 +152,7 @@ def _create_issues(
             }
         ).encode()
 
-        req = urllib.request.Request(
+        req = urllib.request.Request(  # noqa: S310
             f"{GITHUB_API_BASE}/repos/{config.repo}/issues",
             data=payload,
             headers={
@@ -165,7 +164,7 @@ def _create_issues(
         )
 
         try:
-            with urllib.request.urlopen(req) as resp:
+            with urllib.request.urlopen(req) as resp:  # noqa: S310
                 data = json.loads(resp.read().decode())
                 records.append(
                     IssueRecord(
@@ -203,7 +202,7 @@ def _create_session(prompt: str, title: str, api_token: str) -> dict | None:
         }
     ).encode()
 
-    req = urllib.request.Request(
+    req = urllib.request.Request(  # noqa: S310
         f"{DEVIN_API_BASE}/sessions",
         data=payload,
         headers={
@@ -213,7 +212,7 @@ def _create_session(prompt: str, title: str, api_token: str) -> dict | None:
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req) as resp:
+        with urllib.request.urlopen(req) as resp:  # noqa: S310
             return json.loads(resp.read().decode())
     except Exception:
         logger.exception("Failed to create fixer session: %s", title)
@@ -229,7 +228,7 @@ def _demo_pr_record(category: str, findings_count: int) -> PRRecord:
     }
     return PRRecord(
         pr_number=5,
-        pr_url=f"https://github.com/Andrewstein18/superset-devin-demo/pull/5",
+        pr_url="https://github.com/Andrewstein18/superset-devin-demo/pull/5",
         title=pr_titles.get(category, f"fix: {category} tech debt cleanup"),
         category=category,
         labels=["tech-debt", "automated-cleanup", category],

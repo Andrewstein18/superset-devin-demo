@@ -67,7 +67,7 @@ SCANNER_CATEGORIES: list[ScanCategory] = [
         patterns=[
             "except Exception:",
             "except:",
-            '# noqa: S608',
+            "# noqa: S608",
             "TODO.*access control",
         ],
     ),

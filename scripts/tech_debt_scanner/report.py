@@ -23,8 +23,8 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
-from scripts.tech_debt_scanner.config import PipelineConfig
-from scripts.tech_debt_scanner.models import (
+from .config import PipelineConfig
+from .models import (
     DocResult,
     Finding,
     IssueRecord,
@@ -49,9 +49,7 @@ def collect_metrics(
     severity_counts = Counter(f.severity for f in scanner_findings)
 
     bugs_found = category_counts.get("security", 0)
-    tech_debt_found = sum(
-        v for k, v in category_counts.items() if k != "security"
-    )
+    tech_debt_found = sum(v for k, v in category_counts.items() if k != "security")
 
     total_lines_added = sum(pr.lines_added for pr in prs)
     total_lines_removed = sum(pr.lines_removed for pr in prs)
@@ -91,17 +89,17 @@ def generate_report(metrics: PipelineMetrics, config: PipelineConfig) -> str:
     """Generate markdown summary report."""
     timestamp = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     lines = [
-        f"# Tech Debt Scanner Report",
-        f"",
+        "# Tech Debt Scanner Report",
+        "",
         f"**Repo:** {config.repo}",
         f"**Date:** {timestamp}",
-        f"",
-        f"---",
-        f"",
-        f"## Key Metrics",
-        f"",
-        f"| Metric | Value |",
-        f"|--------|-------|",
+        "",
+        "---",
+        "",
+        "## Key Metrics",
+        "",
+        "| Metric | Value |",
+        "|--------|-------|",
         f"| Total Findings | {metrics.total_findings} |",
         f"| Bugs Found | {metrics.bugs_found} |",
         f"| Tech Debt Found | {metrics.tech_debt_found} |",
@@ -114,35 +112,39 @@ def generate_report(metrics: PipelineMetrics, config: PipelineConfig) -> str:
         f"| .md Files Created | {metrics.total_md_files_created} |",
         f"| Agents Spawned | {metrics.total_agents_spawned} |",
         f"| CI Pass Rate | {metrics.ci_pass_rate:.0%} |",
-        f"",
-        f"## Findings by Category",
-        f"",
-        f"| Category | Count |",
-        f"|----------|-------|",
+        "",
+        "## Findings by Category",
+        "",
+        "| Category | Count |",
+        "|----------|-------|",
     ]
 
     for cat, count in sorted(metrics.findings_by_category.items()):
         lines.append(f"| {cat} | {count} |")
 
-    lines.extend([
-        f"",
-        f"## Findings by Severity",
-        f"",
-        f"| Severity | Count |",
-        f"|----------|-------|",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Findings by Severity",
+            "",
+            "| Severity | Count |",
+            "|----------|-------|",
+        ]
+    )
 
     for sev, count in sorted(metrics.findings_by_severity.items()):
         lines.append(f"| {sev} | {count} |")
 
     if metrics.prs:
-        lines.extend([
-            f"",
-            f"## Pull Requests",
-            f"",
-            f"| PR | Title | Category | Findings | Lines | CI |",
-            f"|---|-------|----------|----------|-------|----|",
-        ])
+        lines.extend(
+            [
+                "",
+                "## Pull Requests",
+                "",
+                "| PR | Title | Category | Findings | Lines | CI |",
+                "|---|-------|----------|----------|-------|----|",
+            ]
+        )
         for pr in metrics.prs:
             ci_status = (
                 f"Passed ({pr.ci_attempts} attempt{'s' if pr.ci_attempts != 1 else ''})"
@@ -150,37 +152,44 @@ def generate_report(metrics: PipelineMetrics, config: PipelineConfig) -> str:
                 else f"Failed ({pr.ci_attempts} attempts)"
             )
             lines.append(
-                f"| [#{pr.pr_number}]({pr.pr_url}) | {pr.title} | {pr.category} | "
-                f"{pr.findings_addressed} | +{pr.lines_added}/-{pr.lines_removed} | {ci_status} |"
+                f"| [#{pr.pr_number}]({pr.pr_url}) "
+                f"| {pr.title} | {pr.category} | "
+                f"{pr.findings_addressed} "
+                f"| +{pr.lines_added}/-{pr.lines_removed} "
+                f"| {ci_status} |"
             )
 
     if metrics.issues:
-        lines.extend([
-            f"",
-            f"## Issues Filed",
-            f"",
-            f"| Issue | Title | Severity | Category |",
-            f"|-------|-------|----------|----------|",
-        ])
+        lines.extend(
+            [
+                "",
+                "## Issues Filed",
+                "",
+                "| Issue | Title | Severity | Category |",
+                "|-------|-------|----------|----------|",
+            ]
+        )
         for issue in metrics.issues:
             lines.append(
                 f"| [#{issue.issue_number}]({issue.issue_url}) | {issue.title} | "
                 f"{issue.severity} | {issue.category} |"
             )
 
-    lines.extend([
-        f"",
-        f"## Per-PR Averages",
-        f"",
-        f"| Metric | Average |",
-        f"|--------|---------|",
-        f"| Findings / PR | {metrics.avg_findings_per_pr:.1f} |",
-        f"| Lines Changed / PR | {metrics.avg_lines_changed_per_pr:.1f} |",
-        f"| CI Attempts / PR | {metrics.avg_ci_attempts:.1f} |",
-        f"",
-        f"---",
-        f"*Generated by Tech Debt Scanner — Powered by Devin*",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Per-PR Averages",
+            "",
+            "| Metric | Average |",
+            "|--------|---------|",
+            f"| Findings / PR | {metrics.avg_findings_per_pr:.1f} |",
+            f"| Lines Changed / PR | {metrics.avg_lines_changed_per_pr:.1f} |",
+            f"| CI Attempts / PR | {metrics.avg_ci_attempts:.1f} |",
+            "",
+            "---",
+            "*Generated by Tech Debt Scanner — Powered by Devin*",
+        ]
+    )
 
     return "\n".join(lines)
 
