@@ -172,6 +172,14 @@ under the License.
   </div>
 </div>
 
+<!-- Severity Breakdown Metrics -->
+<div class="metrics-grid" style="margin-bottom: 32px;">
+  <div class="metric-card red"><div class="metric-value" id="m-critical">2</div><div class="metric-label">Critical (SQL Injection, Data Loss)</div></div>
+  <div class="metric-card orange"><div class="metric-value" id="m-high">8</div><div class="metric-label">High (Production Bugs, Error Masking)</div></div>
+  <div class="metric-card blue"><div class="metric-value" id="m-medium">7</div><div class="metric-label">Medium (Refactoring Blockers)</div></div>
+  <div class="metric-card"><div class="metric-value" id="m-low">3</div><div class="metric-label">Low (Cleanup Items)</div></div>
+</div>
+
 <!-- Active Agents -->
 <div class="section">
   <h2>Devin Agents <span class="badge">2 scanners + fixers</span></h2>
@@ -220,107 +228,131 @@ under the License.
   <h2>Issues Filed <span class="badge">20</span></h2>
   <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden">
   <table>
-    <thead><tr><th>#</th><th>Title</th><th>Category</th></tr></thead>
+    <thead><tr><th>#</th><th>Title</th><th>Severity</th><th>Category</th></tr></thead>
     <tbody>
+      <!-- CRITICAL -->
       <tr>
         <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/6">#6</a></td>
         <td>SQL injection risk in SecretsMigrator._select_columns_from_table</td>
+        <td><span class="severity-critical">CRITICAL</span></td>
         <td><span class="label label-security">security</span></td>
       </tr>
       <tr>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/15">#15</a></td>
+        <td>Raw f-string SQL in SecretsMigrator._re_encrypt_row</td>
+        <td><span class="severity-critical">CRITICAL</span></td>
+        <td><span class="label label-security">security</span></td>
+      </tr>
+      <!-- HIGH -->
+      <tr>
         <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/7">#7</a></td>
         <td>Bare except BaseException swallows all errors in csv.py</td>
+        <td><span class="severity-high">HIGH</span></td>
+        <td><span class="label label-security">security</span></td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/13">#13</a></td>
+        <td>Regex-based SVG sanitization in core.py is bypassable</td>
+        <td><span class="severity-high">HIGH</span></td>
         <td><span class="label label-security">security</span></td>
       </tr>
       <tr>
         <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/8">#8</a></td>
         <td>Broad except Exception used for control flow in core.py</td>
-        <td><span class="label label-security">security</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/9">#9</a></td>
-        <td>raise Exception (broad) used instead of specific types</td>
-        <td><span class="label label-security">security</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/10">#10</a></td>
-        <td>Legacy typing.Optional, Dict, Union imports instead of modern syntax</td>
-        <td><span class="label label-type-safety">type-safety</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/11">#11</a></td>
-        <td>Duplicate from typing import Any in webdriver.py</td>
-        <td><span class="label label-type-safety">type-safety</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/12">#12</a></td>
-        <td>Stale TODO comments in database.py marked for removal</td>
-        <td><span class="label label-dead-code">dead-code</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/13">#13</a></td>
-        <td>Regex-based SVG sanitization in core.py is bypassable</td>
-        <td><span class="label label-security">security</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/14">#14</a></td>
-        <td>Pervasive use of Any type in webdriver.py and log.py</td>
-        <td><span class="label label-type-safety">type-safety</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/15">#15</a></td>
-        <td>Raw f-string SQL in SecretsMigrator._re_encrypt_row</td>
+        <td><span class="severity-high">HIGH</span></td>
         <td><span class="label label-security">security</span></td>
       </tr>
       <tr>
         <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/17">#17</a></td>
         <td>225 any type usages across 67 files in explore/</td>
-        <td><span class="label label-type-safety">type-safety</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/18">#18</a></td>
-        <td>30+ eslint-disable and @ts-expect-error suppressions</td>
-        <td><span class="label label-type-safety">type-safety</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/19">#19</a></td>
-        <td>MetricsControl.tsx has 22 any types</td>
+        <td><span class="severity-high">HIGH</span></td>
         <td><span class="label label-type-safety">type-safety</span></td>
       </tr>
       <tr>
         <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/20">#20</a></td>
         <td>standardizedFormData.ts transform() returns any</td>
+        <td><span class="severity-high">HIGH</span></td>
         <td><span class="label label-type-safety">type-safety</span></td>
       </tr>
       <tr>
         <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/21">#21</a></td>
         <td>store.ts uses 5 as any casts in core state management</td>
+        <td><span class="severity-high">HIGH</span></td>
         <td><span class="label label-type-safety">type-safety</span></td>
       </tr>
       <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/22">#22</a></td>
-        <td>20+ stale TODO comments in test files need migration</td>
-        <td><span class="label label-dead-code">dead-code</span></td>
-      </tr>
-      <tr>
-        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/23">#23</a></td>
-        <td>ZoomConfigControl has 4 @ts-expect-error for Slider type mismatch</td>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/19">#19</a></td>
+        <td>MetricsControl.tsx has 22 any types</td>
+        <td><span class="severity-high">HIGH</span></td>
         <td><span class="label label-type-safety">type-safety</span></td>
       </tr>
       <tr>
         <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/24">#24</a></td>
         <td>setControlValue action uses any type for value parameter</td>
+        <td><span class="severity-high">HIGH</span></td>
+        <td><span class="label label-type-safety">type-safety</span></td>
+      </tr>
+      <!-- MEDIUM -->
+      <tr>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/9">#9</a></td>
+        <td>raise Exception (broad) used instead of specific types</td>
+        <td><span class="severity-medium">MEDIUM</span></td>
+        <td><span class="label label-security">security</span></td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/18">#18</a></td>
+        <td>30+ eslint-disable and @ts-expect-error suppressions</td>
+        <td><span class="severity-medium">MEDIUM</span></td>
+        <td><span class="label label-type-safety">type-safety</span></td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/14">#14</a></td>
+        <td>Pervasive use of Any type in webdriver.py and log.py</td>
+        <td><span class="severity-medium">MEDIUM</span></td>
         <td><span class="label label-type-safety">type-safety</span></td>
       </tr>
       <tr>
         <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/25">#25</a></td>
         <td>exploreReducer.ts is 684 lines — should split with Redux Toolkit</td>
+        <td><span class="severity-medium">MEDIUM</span></td>
         <td><span class="label label-dead-code">dead-code</span></td>
       </tr>
       <tr>
         <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/26">#26</a></td>
         <td>MatrixifyDimensionControl.tsx has 9 any types</td>
+        <td><span class="severity-medium">MEDIUM</span></td>
         <td><span class="label label-type-safety">type-safety</span></td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/23">#23</a></td>
+        <td>ZoomConfigControl has 4 @ts-expect-error for Slider type mismatch</td>
+        <td><span class="severity-medium">MEDIUM</span></td>
+        <td><span class="label label-type-safety">type-safety</span></td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/10">#10</a></td>
+        <td>Legacy typing.Optional, Dict, Union imports instead of modern syntax</td>
+        <td><span class="severity-medium">MEDIUM</span></td>
+        <td><span class="label label-type-safety">type-safety</span></td>
+      </tr>
+      <!-- LOW -->
+      <tr>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/11">#11</a></td>
+        <td>Duplicate from typing import Any in webdriver.py</td>
+        <td><span class="severity-low">LOW</span></td>
+        <td><span class="label label-type-safety">type-safety</span></td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/12">#12</a></td>
+        <td>Stale TODO comments in database.py marked for removal</td>
+        <td><span class="severity-low">LOW</span></td>
+        <td><span class="label label-dead-code">dead-code</span></td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/22">#22</a></td>
+        <td>20+ stale TODO comments in test files need migration</td>
+        <td><span class="severity-low">LOW</span></td>
+        <td><span class="label label-dead-code">dead-code</span></td>
       </tr>
     </tbody>
   </table>
@@ -378,6 +410,13 @@ async function loadDashboardData() {
     document.getElementById('m-mdfiles').textContent = data.md_files_created || 0;
     document.getElementById('m-docstrings').textContent = data.docstrings_added || 0;
     document.getElementById('timestamp').textContent = data.timestamp || new Date().toLocaleString();
+    // Update severity metrics from live data
+    if (data.severity_counts) {
+      document.getElementById('m-critical').textContent = data.severity_counts.critical || 0;
+      document.getElementById('m-high').textContent = data.severity_counts.high || 0;
+      document.getElementById('m-medium').textContent = data.severity_counts.medium || 0;
+      document.getElementById('m-low').textContent = data.severity_counts.low || 0;
+    }
   } catch (e) {
     // Use inline data as fallback
   }

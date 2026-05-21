@@ -61,17 +61,31 @@ Scan ONLY the directory: {directory}
 
 ## What to do
 1. Read and understand the actual source code in this directory — do not just grep.
-2. Find the top 5-10 most important issues:
+   Trace function calls, understand data flow, check error handling paths.
+2. Find the top 5-10 most important issues. For EACH finding, assign a severity:
+
+   **critical** — Exploitable security flaw or data loss risk
+     (e.g., f-string SQL injection, missing auth on sensitive endpoints)
+   **high** — Likely to cause bugs in production or mask real errors
+     (e.g., bare `except BaseException:`, silent error swallowing)
+   **medium** — Degrades code quality and blocks safe refactoring
+     (e.g., `any` types on core interfaces, 30+ eslint-disable suppressions)
+   **low** — Cleanup items that improve readability
+     (e.g., stale TODOs, unused imports, deprecated syntax)
+
+   Categories to look for:
    - Security: bare `except Exception:`, f-string SQL, missing auth
    - Type safety: `any` types, `# type: ignore`, `@ts-expect-error`
    - Dead code: stale TODOs marked for removal, deprecated code, unused imports
+
 3. For each file you analyze, create a `MODULE_README.md` in the same directory
    documenting what the module does, key functions, and how it connects to others.
 4. Add helpful inline comments and docstrings to undocumented functions.
 5. Create a GitHub issue for EACH finding with:
    - Title: "[Tech Debt] <brief description>"
    - Labels: tech-debt, automated-cleanup
-   - Body: file, line, description, suggested fix
+   - Body must include: file, line, severity (critical/high/medium/low),
+     category (security/type-safety/dead-code), description, suggested fix
 6. Open ONE PR with all your .md files and added comments/docstrings.
    - Title: "docs: add documentation for {directory}"
    - Labels: documentation, automated-cleanup
@@ -80,7 +94,9 @@ Scan ONLY the directory: {directory}
 Write a summary of what you did to /home/ubuntu/scanner_summary.json:
 {{
   "issues_created": [
-    {{"number": 1, "url": "...", "title": "...", "severity": "high"}}
+    {{"number": 1, "url": "...", "title": "...",
+     "severity": "critical|high|medium|low",
+     "category": "security|type-safety|dead-code"}}
   ],
   "pr_url": "...",
   "md_files_created": 3,
@@ -94,15 +110,18 @@ FIXER_PROMPT = """You are a fixer agent for the {repo} repository.
 ## Issue to fix
 {issue_url}
 Title: {issue_title}
+Severity: {severity}
+Category: {category}
 
 ## Instructions
-1. Read the issue and understand the problem
-2. Read the actual source code to understand the context
-3. Implement the fix
+1. Read the issue and understand the problem fully
+2. Read the actual source code to understand the context — trace call chains
+3. Implement the fix. You may spawn sub-agents for complex fixes.
 4. Run `pre-commit run --all-files` before committing
 5. Open a PR that fixes this issue
-   - Reference the issue in the PR body
+   - Reference the issue in the PR body ("Fixes #{issue_number}")
    - Labels: tech-debt, automated-cleanup
+   - Include severity and category in the PR description
 """
 
 
@@ -253,11 +272,19 @@ def run_pipeline(dry_run: bool = False) -> None:
         return
 
     logger.info("=== Stage 2: Spawning fixer agents ===")
-    for issue in all_issues:
+    severity_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+    sorted_issues = sorted(
+        all_issues,
+        key=lambda i: severity_order.get(i.get("severity", "low"), 3),
+    )
+    for issue in sorted_issues:
         prompt = FIXER_PROMPT.format(
             repo=REPO,
             issue_url=issue.get("url", ""),
             issue_title=issue.get("title", ""),
+            severity=issue.get("severity", "medium"),
+            category=issue.get("category", "unknown"),
+            issue_number=issue.get("number", ""),
         )
         title = f"Fixer: {issue.get('title', 'unknown')[:60]}"
         sid = create_session(
@@ -302,6 +329,14 @@ def _save_results(
     total_comments = sum(s.get("comments_added", 0) for s in scanner_results)
     total_docstrings = sum(s.get("docstrings_added", 0) for s in scanner_results)
 
+    severity_counts: dict[str, int] = {}
+    category_counts: dict[str, int] = {}
+    for issue in issues:
+        sev = issue.get("severity", "medium")
+        cat = issue.get("category", "unknown")
+        severity_counts[sev] = severity_counts.get(sev, 0) + 1
+        category_counts[cat] = category_counts.get(cat, 0) + 1
+
     metrics = {
         "timestamp": timestamp,
         "repo": REPO,
@@ -311,6 +346,8 @@ def _save_results(
         "md_files_created": total_md,
         "comments_added": total_comments,
         "docstrings_added": total_docstrings,
+        "severity_counts": severity_counts,
+        "category_counts": category_counts,
         "scanners": scanner_results,
         "issues": issues,
         "fixer_prs": fixer_prs,
@@ -355,12 +392,23 @@ def _save_results(
         report_lines.append("")
 
     if issues:
-        report_lines.append("## Issues Filed")
+        report_lines.append("## Issues by Severity")
         report_lines.append("")
-        for issue in issues:
-            report_lines.append(
-                f"- [{issue.get('title', 'Untitled')}]({issue.get('url', '')})"
-            )
+        for sev in ["critical", "high", "medium", "low"]:
+            sev_issues = [
+                i for i in issues if i.get("severity", "medium") == sev
+            ]
+            if sev_issues:
+                report_lines.append(f"### {sev.capitalize()} ({len(sev_issues)})")
+                report_lines.append("")
+                for issue in sev_issues:
+                    cat = issue.get("category", "")
+                    cat_str = f" [{cat}]" if cat else ""
+                    report_lines.append(
+                        f"- [{issue.get('title', 'Untitled')}]"
+                        f"({issue.get('url', '')}){cat_str}"
+                    )
+                report_lines.append("")
         report_lines.append("")
 
     report_path = REPORT_DIR / f"report-{ts_file}.md"
