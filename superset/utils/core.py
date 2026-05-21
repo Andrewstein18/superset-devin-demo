@@ -611,6 +611,7 @@ def sanitize_url(url: str) -> str:
 
 
 def readfile(file_path: str) -> str | None:
+    """Read and return the entire contents of a file as a string."""
     with open(file_path) as f:
         content = f.read()
     return content
@@ -619,7 +620,11 @@ def readfile(file_path: str) -> str | None:
 def generic_find_constraint_name(
     table: str, columns: set[str], referenced: str, database: SQLAlchemy
 ) -> str | None:
-    """Utility to find a constraint name in alembic migrations"""
+    """Find a foreign-key constraint name by referred table and columns.
+
+    Uses SQLAlchemy reflection via ``autoload`` to inspect the live schema.
+    Intended for use inside Alembic migration scripts.
+    """
     tbl = sa.Table(
         table, database.metadata, autoload=True, autoload_with=database.engine
     )
@@ -679,6 +684,10 @@ def get_datasource_full_name(
     catalog: str | None = None,
     schema: str | None = None,
 ) -> str:
+    """Build a bracket-quoted fully-qualified datasource name.
+
+    Example: ``[database].[catalog].[schema].[table]``
+    """
     parts = [database_name, catalog, schema, datasource_name]
     return ".".join([f"[{part}]" for part in parts if part])
 
@@ -1359,6 +1368,7 @@ def get_first_metric_name(
 
 
 def ensure_path_exists(path: str) -> None:
+    """Create *path* and all parents, ignoring ``EEXIST`` for directories."""
     try:
         os.makedirs(path)
     except OSError as ex:
@@ -1885,14 +1895,17 @@ def format_list(items: Sequence[str], sep: str = ", ", quote: str = '"') -> str:
 
 
 def find_duplicates(items: Iterable[InputType]) -> list[InputType]:
-    """Find duplicate items in an iterable."""
+    """Return items that appear more than once, preserving first-seen order."""
     return [item for item, count in collections.Counter(items).items() if count > 1]
 
 
 def remove_duplicates(
     items: Iterable[InputType], key: Callable[[InputType], Any] | None = None
 ) -> list[InputType]:
-    """Remove duplicate items in an iterable."""
+    """Remove duplicate items preserving first-seen order.
+
+    An optional *key* function extracts the value used for uniqueness checks.
+    """
     if not key:
         return list(dict.fromkeys(items).keys())
     seen = set()
