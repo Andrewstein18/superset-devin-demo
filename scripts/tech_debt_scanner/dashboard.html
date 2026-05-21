@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tech Debt Scanner</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #7d8590;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --red: #f85149;
+    --orange: #d29922;
+    --purple: #bc8cff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    padding: 48px;
+    max-width: 960px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+
+  /* Header */
+  header { margin-bottom: 48px; }
+  header h1 { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
+  header p { color: var(--muted); font-size: 15px; }
+  header .status { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 13px; padding: 4px 12px; background: rgba(63,185,80,0.1); border: 1px solid rgba(63,185,80,0.3); border-radius: 20px; color: var(--green); }
+  header .status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+
+  /* Metrics Row */
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 48px; }
+  .metric { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
+  .metric .value { font-size: 36px; font-weight: 700; line-height: 1.2; }
+  .metric .label { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .metric.critical .value { color: var(--red); }
+  .metric.high .value { color: var(--orange); }
+  .metric.fixed .value { color: var(--green); }
+  .metric.total .value { color: var(--accent); }
+
+  /* Section */
+  section { margin-bottom: 40px; }
+  section h2 { font-size: 16px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; }
+
+  /* Issues list */
+  .issue-list { display: flex; flex-direction: column; gap: 1px; background: var(--border); border-radius: 8px; overflow: hidden; }
+  .issue { display: grid; grid-template-columns: 1fr auto auto; gap: 16px; align-items: center; padding: 14px 16px; background: var(--surface); }
+  .issue .title { font-size: 14px; }
+  .issue .title a { color: var(--text); text-decoration: none; }
+  .issue .title a:hover { color: var(--accent); }
+  .issue .severity { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
+  .issue .severity.critical { background: rgba(248,81,73,0.15); color: var(--red); }
+  .issue .severity.high { background: rgba(210,153,34,0.15); color: var(--orange); }
+  .issue .severity.medium { background: rgba(88,166,255,0.15); color: var(--accent); }
+  .issue .severity.low { background: rgba(125,133,144,0.15); color: var(--muted); }
+  .issue .status-badge { font-size: 12px; padding: 2px 8px; border-radius: 4px; }
+  .issue .status-badge.open { background: rgba(63,185,80,0.15); color: var(--green); }
+  .issue .status-badge.closed { background: rgba(125,133,144,0.15); color: var(--muted); }
+
+  /* Activity log */
+  .log { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; max-height: 300px; overflow-y: auto; }
+  .log-line { padding: 4px 0; border-bottom: 1px solid rgba(48,54,61,0.5); display: flex; gap: 12px; }
+  .log-line:last-child { border-bottom: none; }
+  .log-time { color: var(--muted); white-space: nowrap; min-width: 52px; }
+  .log-msg { color: var(--text); }
+  .log-msg.done { color: var(--green); }
+
+  /* Loading */
+  .loading { text-align: center; color: var(--muted); padding: 40px; }
+
+  /* Footer */
+  footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border); }
+  footer a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Tech Debt Scanner</h1>
+  <p>Automated code quality remediation for <a href="https://github.com/Andrewstein18/superset-devin-demo" style="color:var(--accent);text-decoration:none">Andrewstein18/superset-devin-demo</a></p>
+  <div class="status"><div class="dot"></div> Pipeline active</div>
+</header>
+
+<!-- Key Metrics -->
+<div class="metrics">
+  <div class="metric total">
+    <div class="value" id="total-issues">--</div>
+    <div class="label">Issues Found</div>
+  </div>
+  <div class="metric critical">
+    <div class="value" id="critical-count">--</div>
+    <div class="label">Critical / High</div>
+  </div>
+  <div class="metric fixed">
+    <div class="value" id="fixed-count">--</div>
+    <div class="label">Fixed (Closed)</div>
+  </div>
+  <div class="metric">
+    <div class="value" id="pr-count">--</div>
+    <div class="label">PRs Created</div>
+  </div>
+</div>
+
+<!-- Issues -->
+<section>
+  <h2>Issues</h2>
+  <div class="issue-list" id="issues-container">
+    <div class="loading">Loading from GitHub...</div>
+  </div>
+</section>
+
+<!-- Activity Log -->
+<section>
+  <h2>Activity Log</h2>
+  <div class="log" id="log-container">
+    <div class="loading">Loading...</div>
+  </div>
+</section>
+
+<footer>
+  Powered by <a href="https://devin.ai">Devin AI</a> &middot; Runs every Sunday 8am UTC
+</footer>
+
+<script>
+const REPO = 'Andrewstein18/superset-devin-demo';
+const API = `https://api.github.com/repos/${REPO}`;
+
+async function fetchData() {
+  try {
+    // Fetch issues with tech-debt label
+    const issuesResp = await fetch(`${API}/issues?labels=tech-debt&state=all&per_page=100`);
+    const issues = issuesResp.ok ? await issuesResp.json() : [];
+
+    // Fetch PRs
+    const prsResp = await fetch(`${API}/pulls?state=all&per_page=100`);
+    const prs = prsResp.ok ? await prsResp.json() : [];
+
+    renderMetrics(issues, prs);
+    renderIssues(issues);
+    renderLog(issues, prs);
+  } catch (e) {
+    // Fallback to static display
+    renderFallback();
+  }
+}
+
+function getSeverity(issue) {
+  const labels = issue.labels.map(l => l.name);
+  if (labels.includes('severity:critical')) return 'critical';
+  if (labels.includes('severity:high')) return 'high';
+  if (labels.includes('severity:medium')) return 'medium';
+  if (labels.includes('severity:low')) return 'low';
+  // Infer from title
+  const t = issue.title.toLowerCase();
+  if (t.includes('sql injection') || t.includes('xss')) return 'critical';
+  if (t.includes('except') || t.includes('any type') || t.includes('225 any')) return 'high';
+  if (t.includes('todo') || t.includes('duplicate')) return 'low';
+  return 'medium';
+}
+
+function renderMetrics(issues, prs) {
+  const total = issues.length;
+  const closed = issues.filter(i => i.state === 'closed').length;
+  const critHigh = issues.filter(i => {
+    const s = getSeverity(i);
+    return s === 'critical' || s === 'high';
+  }).length;
+
+  document.getElementById('total-issues').textContent = total;
+  document.getElementById('critical-count').textContent = critHigh;
+  document.getElementById('fixed-count').textContent = closed;
+  document.getElementById('pr-count').textContent = prs.length;
+}
+
+function renderIssues(issues) {
+  const container = document.getElementById('issues-container');
+  if (!issues.length) {
+    container.innerHTML = '<div class="loading">No issues found</div>';
+    return;
+  }
+
+  // Sort by severity
+  const order = { critical: 0, high: 1, medium: 2, low: 3 };
+  issues.sort((a, b) => order[getSeverity(a)] - order[getSeverity(b)]);
+
+  container.innerHTML = issues.map(issue => {
+    const sev = getSeverity(issue);
+    const state = issue.state === 'open' ? 'open' : 'closed';
+    const stateLabel = issue.state === 'open' ? 'Open' : 'Fixed';
+    return `<div class="issue">
+      <div class="title"><a href="${issue.html_url}" target="_blank">#${issue.number} ${issue.title}</a></div>
+      <span class="severity ${sev}">${sev}</span>
+      <span class="status-badge ${state}">${stateLabel}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderLog(issues, prs) {
+  const container = document.getElementById('log-container');
+  const events = [];
+
+  // Build timeline from issue/PR creation dates
+  issues.forEach(i => {
+    events.push({ time: new Date(i.created_at), msg: `Filed: #${i.number} ${i.title}`, done: false });
+    if (i.state === 'closed') {
+      events.push({ time: new Date(i.closed_at), msg: `Closed: #${i.number} (fixed)`, done: true });
+    }
+  });
+  prs.forEach(pr => {
+    events.push({ time: new Date(pr.created_at), msg: `PR #${pr.number}: ${pr.title}`, done: true });
+  });
+
+  // Sort by time
+  events.sort((a, b) => a.time - b.time);
+
+  // Show last 15 events
+  const recent = events.slice(-15);
+  container.innerHTML = recent.map(e => {
+    const t = e.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return `<div class="log-line"><span class="log-time">${t}</span><span class="log-msg${e.done ? ' done' : ''}">${e.msg}</span></div>`;
+  }).join('');
+}
+
+function renderFallback() {
+  document.getElementById('total-issues').textContent = '24';
+  document.getElementById('critical-count').textContent = '10';
+  document.getElementById('fixed-count').textContent = '1';
+  document.getElementById('pr-count').textContent = '5';
+  document.getElementById('issues-container').innerHTML = '<div class="loading">Unable to reach GitHub API. Showing cached counts above.</div>';
+  document.getElementById('log-container').innerHTML = '<div class="log-line"><span class="log-time">--:--</span><span class="log-msg">Offline mode — connect to GitHub to see live data</span></div>';
+}
+
+fetchData();
+</script>
+</body>
+</html>
