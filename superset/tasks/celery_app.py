@@ -42,6 +42,7 @@ app = celery_app
 
 @worker_process_init.connect
 def reset_db_connection_pool(**kwargs: Any) -> None:  # pylint: disable=unused-argument
+    """Dispose the SQLAlchemy engine pool when a new Celery worker process starts."""
     with flask_app.app_context():
         # https://docs.sqlalchemy.org/en/14/core/connections.html#engine-disposal
         db.engine.dispose()
@@ -54,9 +55,10 @@ def teardown(  # pylint: disable=unused-argument
     **kwargs: Any,
 ) -> None:
     """
-    After each Celery task teardown the Flask-SQLAlchemy session.
+    Teardown the Flask-SQLAlchemy session after each Celery task.
 
-    Note for non eagar requests Flask-SQLAlchemy will perform the teardown.
+    For non-eager requests Flask-SQLAlchemy performs the teardown
+    itself; this handler covers the Celery worker process case.
 
     :param retval: The return value of the task
     :see: https://docs.celeryq.dev/en/stable/userguide/signals.html#task-postrun

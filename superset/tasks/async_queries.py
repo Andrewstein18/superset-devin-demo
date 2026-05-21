@@ -52,6 +52,7 @@ query_timeout = current_app.config[
 
 
 def set_form_data(form_data: dict[str, Any]) -> None:
+    """Store form_data on Flask's ``g`` object for downstream access."""
     g.form_data = form_data
 
 
@@ -71,6 +72,14 @@ def _create_query_context_from_form(form_data: dict[str, Any]) -> QueryContext:
 
 
 def _load_user_from_job_metadata(job_metadata: dict[str, Any]) -> User:
+    """
+    Resolve the user who should execute an async query job.
+
+    Priority: logged-in user (by ID) > embedded guest (by token) > anonymous.
+
+    :param job_metadata: Async query job metadata dict
+    :returns: The resolved FAB User instance
+    """
     if user_id := job_metadata.get("user_id"):
         # logged in user
         user = security_manager.get_user_by_id(user_id)

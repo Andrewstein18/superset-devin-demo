@@ -62,6 +62,7 @@ def log_task_failure(  # pylint: disable=unused-argument
     einfo: Any = None,
     **kw: Any,
 ) -> None:
+    """Log Celery task failures with full exception info."""
     task_name = sender.name if sender else "Unknown"
     logger.exception("Celery task %s failed: %s", task_name, exception, exc_info=einfo)
 

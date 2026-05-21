@@ -26,6 +26,13 @@ logger = logging.getLogger(__name__)
 
 @celery_app.task(name="slack.cache_channels")
 def cache_channels() -> None:
+    """
+    Warm up the Slack channel list cache.
+
+    Fetches all Slack channels via the Slack API and stores
+    them in the application cache for use by alert/report
+    delivery. Respects rate-limit retry configuration.
+    """
     cache_timeout = current_app.config["SLACK_CACHE_TIMEOUT"]
     retry_count = current_app.config.get("SLACK_API_RATE_LIMIT_RETRY_COUNT", 2)
 

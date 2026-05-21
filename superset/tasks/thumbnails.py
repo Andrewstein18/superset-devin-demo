@@ -42,6 +42,19 @@ def cache_chart_thumbnail(
     window_size: Optional[WindowSize] = None,
     thumb_size: Optional[WindowSize] = None,
 ) -> None:
+    """
+    Capture and cache a chart thumbnail via headless browser.
+
+    Resolves the executor user from THUMBNAIL_EXECUTORS config, then
+    renders the chart URL and stores the resulting screenshot in the
+    thumbnail cache.
+
+    :param current_user: Username of the user who triggered the task
+    :param chart_id: The ID of the chart to thumbnail
+    :param force: Whether to overwrite an existing cached thumbnail
+    :param window_size: Browser viewport dimensions for rendering
+    :param thumb_size: Final thumbnail image dimensions
+    """
     # pylint: disable=import-outside-toplevel
     from superset.models.slice import Slice
 
@@ -80,6 +93,19 @@ def cache_dashboard_thumbnail(
     window_size: Optional[WindowSize] = None,
     cache_key: str | None = None,
 ) -> None:
+    """
+    Capture and cache a dashboard thumbnail via headless browser.
+
+    Resolves the executor user from THUMBNAIL_EXECUTORS config, renders
+    the dashboard URL, and stores the screenshot in the thumbnail cache.
+
+    :param current_user: Username of the user who triggered the task
+    :param dashboard_id: The ID of the dashboard to thumbnail
+    :param force: Whether to overwrite an existing cached thumbnail
+    :param thumb_size: Final thumbnail image dimensions
+    :param window_size: Browser viewport dimensions for rendering
+    :param cache_key: Optional explicit cache key override
+    """
     # pylint: disable=import-outside-toplevel
     from superset.models.dashboard import Dashboard
 
@@ -119,6 +145,21 @@ def cache_dashboard_screenshot(  # pylint: disable=too-many-arguments
     thumb_size: Optional[WindowSize] = None,
     window_size: Optional[WindowSize] = None,
 ) -> None:
+    """
+    Capture and cache a dashboard screenshot for embedded or direct use.
+
+    If a guest_token is provided, renders as the embedded guest user;
+    otherwise resolves the executor user from THUMBNAIL_EXECUTORS config.
+
+    :param username: Username of the requesting user
+    :param dashboard_id: The ID of the dashboard
+    :param dashboard_url: Full URL to render (may include filters/state)
+    :param force: Whether to overwrite an existing cached screenshot
+    :param cache_key: Optional explicit cache key override
+    :param guest_token: JWT guest token for embedded dashboard access
+    :param thumb_size: Final screenshot image dimensions
+    :param window_size: Browser viewport dimensions for rendering
+    """
     # pylint: disable=import-outside-toplevel
     from superset.models.dashboard import Dashboard
 
