@@ -141,13 +141,13 @@ under the License.
 
 <!-- Key Metrics -->
 <div class="metrics-grid">
-  <div class="metric-card highlight"><div class="metric-value" id="m-findings">10</div><div class="metric-label">Issues Filed</div></div>
+  <div class="metric-card highlight"><div class="metric-value" id="m-findings">20</div><div class="metric-label">Issues Filed</div></div>
   <div class="metric-card red"><div class="metric-value" id="m-security">4</div><div class="metric-label">Security Issues</div></div>
-  <div class="metric-card blue"><div class="metric-value" id="m-typesafety">3</div><div class="metric-label">Type Safety Issues</div></div>
-  <div class="metric-card orange"><div class="metric-value" id="m-deadcode">3</div><div class="metric-label">Dead Code / TODOs</div></div>
-  <div class="metric-card green"><div class="metric-value" id="m-prs">1</div><div class="metric-label">Docs PRs Created</div></div>
-  <div class="metric-card purple"><div class="metric-value" id="m-agents">2</div><div class="metric-label">Agents Spawned</div></div>
-  <div class="metric-card"><div class="metric-value" id="m-mdfiles">7</div><div class="metric-label">.md Files Created</div></div>
+  <div class="metric-card blue"><div class="metric-value" id="m-typesafety">10</div><div class="metric-label">Type Safety Issues</div></div>
+  <div class="metric-card orange"><div class="metric-value" id="m-deadcode">6</div><div class="metric-label">Dead Code / TODOs</div></div>
+  <div class="metric-card green"><div class="metric-value" id="m-prs">2</div><div class="metric-label">Docs PRs Created</div></div>
+  <div class="metric-card purple"><div class="metric-value" id="m-agents">2</div><div class="metric-label">Scanner Agents</div></div>
+  <div class="metric-card"><div class="metric-value" id="m-mdfiles">13</div><div class="metric-label">.md Files Created</div></div>
   <div class="metric-card"><div class="metric-value" id="m-docstrings">15+</div><div class="metric-label">Docstrings Added</div></div>
 </div>
 
@@ -156,18 +156,18 @@ under the License.
   <div class="chart-card">
     <h3>Issues by Category</h3>
     <div class="bar-chart">
-      <div class="bar-row"><div class="bar-label">Security</div><div class="bar-track"><div class="bar-fill security" style="width:40%">4</div></div></div>
-      <div class="bar-row"><div class="bar-label">Type Safety</div><div class="bar-track"><div class="bar-fill type-safety" style="width:30%">3</div></div></div>
-      <div class="bar-row"><div class="bar-label">Dead Code</div><div class="bar-track"><div class="bar-fill dead-code" style="width:30%">3</div></div></div>
+      <div class="bar-row"><div class="bar-label">Type Safety</div><div class="bar-track"><div class="bar-fill type-safety" style="width:50%">10</div></div></div>
+      <div class="bar-row"><div class="bar-label">Dead Code</div><div class="bar-track"><div class="bar-fill dead-code" style="width:30%">6</div></div></div>
+      <div class="bar-row"><div class="bar-label">Security</div><div class="bar-track"><div class="bar-fill security" style="width:20%">4</div></div></div>
     </div>
   </div>
   <div class="chart-card">
     <h3>Issues by Severity</h3>
     <div class="bar-chart">
-      <div class="bar-row"><div class="bar-label">Critical</div><div class="bar-track"><div class="bar-fill critical" style="width:20%">2</div></div></div>
-      <div class="bar-row"><div class="bar-label">High</div><div class="bar-track"><div class="bar-fill high" style="width:30%">3</div></div></div>
-      <div class="bar-row"><div class="bar-label">Medium</div><div class="bar-track"><div class="bar-fill medium" style="width:30%">3</div></div></div>
-      <div class="bar-row"><div class="bar-label">Low</div><div class="bar-track"><div class="bar-fill low" style="width:20%">2</div></div></div>
+      <div class="bar-row"><div class="bar-label">Critical</div><div class="bar-track"><div class="bar-fill critical" style="width:10%">2</div></div></div>
+      <div class="bar-row"><div class="bar-label">High</div><div class="bar-track"><div class="bar-fill high" style="width:40%">8</div></div></div>
+      <div class="bar-row"><div class="bar-label">Medium</div><div class="bar-track"><div class="bar-fill medium" style="width:35%">7</div></div></div>
+      <div class="bar-row"><div class="bar-label">Low</div><div class="bar-track"><div class="bar-fill low" style="width:15%">3</div></div></div>
     </div>
   </div>
 </div>
@@ -184,14 +184,14 @@ under the License.
     <div class="agent-card">
       <div class="agent-name">Scanner: superset-frontend/src/explore/</div>
       <div class="agent-role">Stage 1 &mdash; Frontend code analysis</div>
-      <div class="agent-stats">Running &middot; <a href="https://app.devin.ai/sessions/c53eaa2afc914fc4b71da7a23ac04da9">session</a></div>
+      <div class="agent-stats">Filed <span>10</span> issues &middot; Created <span>6</span> .md files &middot; <a href="https://github.com/Andrewstein18/superset-devin-demo/pull/27">PR #27</a></div>
     </div>
   </div>
 </div>
 
 <!-- PRs Created -->
 <div class="section">
-  <h2>Pull Requests <span class="badge">1</span></h2>
+  <h2>Pull Requests <span class="badge">2</span></h2>
   <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden">
   <table>
     <thead><tr><th>#</th><th>Title</th><th>Type</th><th>Artifacts</th><th>Labels</th></tr></thead>
@@ -203,6 +203,13 @@ under the License.
         <td>7 .md files, 15+ docstrings</td>
         <td><span class="label label-documentation">documentation</span><span class="label label-tech-debt">automated-cleanup</span></td>
       </tr>
+      <tr>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/pull/27">#27</a></td>
+        <td>docs: add module documentation for explore/</td>
+        <td><span class="label label-documentation">documentation</span></td>
+        <td>6 .md files</td>
+        <td><span class="label label-documentation">documentation</span><span class="label label-tech-debt">automated-cleanup</span></td>
+      </tr>
     </tbody>
   </table>
   </div>
@@ -210,7 +217,7 @@ under the License.
 
 <!-- Issues Filed -->
 <div class="section">
-  <h2>Issues Filed <span class="badge">10</span></h2>
+  <h2>Issues Filed <span class="badge">20</span></h2>
   <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden">
   <table>
     <thead><tr><th>#</th><th>Title</th><th>Category</th></tr></thead>
@@ -265,6 +272,56 @@ under the License.
         <td>Raw f-string SQL in SecretsMigrator._re_encrypt_row</td>
         <td><span class="label label-security">security</span></td>
       </tr>
+      <tr>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/17">#17</a></td>
+        <td>225 any type usages across 67 files in explore/</td>
+        <td><span class="label label-type-safety">type-safety</span></td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/18">#18</a></td>
+        <td>30+ eslint-disable and @ts-expect-error suppressions</td>
+        <td><span class="label label-type-safety">type-safety</span></td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/19">#19</a></td>
+        <td>MetricsControl.tsx has 22 any types</td>
+        <td><span class="label label-type-safety">type-safety</span></td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/20">#20</a></td>
+        <td>standardizedFormData.ts transform() returns any</td>
+        <td><span class="label label-type-safety">type-safety</span></td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/21">#21</a></td>
+        <td>store.ts uses 5 as any casts in core state management</td>
+        <td><span class="label label-type-safety">type-safety</span></td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/22">#22</a></td>
+        <td>20+ stale TODO comments in test files need migration</td>
+        <td><span class="label label-dead-code">dead-code</span></td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/23">#23</a></td>
+        <td>ZoomConfigControl has 4 @ts-expect-error for Slider type mismatch</td>
+        <td><span class="label label-type-safety">type-safety</span></td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/24">#24</a></td>
+        <td>setControlValue action uses any type for value parameter</td>
+        <td><span class="label label-type-safety">type-safety</span></td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/25">#25</a></td>
+        <td>exploreReducer.ts is 684 lines — should split with Redux Toolkit</td>
+        <td><span class="label label-dead-code">dead-code</span></td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/Andrewstein18/superset-devin-demo/issues/26">#26</a></td>
+        <td>MatrixifyDimensionControl.tsx has 9 any types</td>
+        <td><span class="label label-type-safety">type-safety</span></td>
+      </tr>
     </tbody>
   </table>
   </div>
@@ -282,8 +339,8 @@ under the License.
     <div class="log-entry"><span class="log-time">00:00:05</span> <span class="log-level-info">[INFO]</span> Waiting for 2 scanner agents...</div>
     <div class="log-entry"><span class="log-time">00:08:30</span> <span class="log-level-success">[DONE]</span> Scanner superset/utils/ &mdash; 10 issues created, PR #16 opened</div>
     <div class="log-entry"><span class="log-time">00:08:31</span> <span class="log-level-info">[INFO]</span> Scanner superset-frontend/src/explore/ &mdash; still running</div>
-    <div class="log-entry"><span class="log-time">00:12:00</span> <span class="log-level-success">[DONE]</span> Scanner superset-frontend/src/explore/ complete</div>
-    <div class="log-entry"><span class="log-time">00:12:01</span> <span class="log-level-info">[INFO]</span> Total issues from scanners: 10+</div>
+    <div class="log-entry"><span class="log-time">00:12:00</span> <span class="log-level-success">[DONE]</span> Scanner superset-frontend/src/explore/ &mdash; 10 issues created, PR #27 opened</div>
+    <div class="log-entry"><span class="log-time">00:12:01</span> <span class="log-level-info">[INFO]</span> Total issues from scanners: 20 (10 per scanner)</div>
     <div class="log-entry"><span class="log-time">00:12:02</span> <span class="log-level-info">[INFO]</span> === Stage 2: Spawning fixer agents ===</div>
     <div class="log-entry"><span class="log-time">00:12:03</span> <span class="log-level-info">[INFO]</span> Creating fixer for each issue...</div>
     <div class="log-entry"><span class="log-time">00:20:00</span> <span class="log-level-success">[DONE]</span> === Pipeline Complete ===</div>
@@ -294,8 +351,8 @@ under the License.
 <div class="section">
   <h2>Per-Run Averages</h2>
   <div class="metrics-grid" style="grid-template-columns: repeat(4, 1fr);">
-    <div class="metric-card"><div class="metric-value">10</div><div class="metric-label">Issues / Run</div></div>
-    <div class="metric-card"><div class="metric-value">7</div><div class="metric-label">.md Files / Run</div></div>
+    <div class="metric-card"><div class="metric-value">20</div><div class="metric-label">Issues / Run</div></div>
+    <div class="metric-card"><div class="metric-value">13</div><div class="metric-label">.md Files / Run</div></div>
     <div class="metric-card"><div class="metric-value">2</div><div class="metric-label">Scanner Agents / Run</div></div>
     <div class="metric-card"><div class="metric-value">~20m</div><div class="metric-label">Total Runtime</div></div>
   </div>
