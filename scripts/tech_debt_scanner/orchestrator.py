@@ -144,7 +144,7 @@ def wait_for_session(
     token: str,
     timeout: int = 1800,
     poll_interval: int = 30,
-) -> dict:
+) -> dict[str, object]:
     """Poll a session until it finishes. Returns session data."""
     done_states = {"stopped", "error", "finished"}
     start = time.time()
@@ -206,7 +206,7 @@ def run_pipeline(dry_run: bool = False) -> None:
 
     # Wait for all scanners
     logger.info("Waiting for %d scanner agents...", len(scanner_sessions))
-    all_issues: list[dict] = []
+    all_issues: list[dict[str, object]] = []
 
     for sid, directory in scanner_sessions:
         result = wait_for_session(sid, token)
