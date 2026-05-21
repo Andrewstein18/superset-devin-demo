@@ -35,6 +35,8 @@ import os
 import sys
 import time
 import urllib.request
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 logging.basicConfig(
@@ -45,6 +47,7 @@ logger = logging.getLogger("tech_debt_scanner")
 
 DEVIN_API = "https://api.devin.ai/v1"
 REPO = "Andrewstein18/superset-devin-demo"
+REPORT_DIR = Path(__file__).resolve().parent.parent.parent / "reports"
 
 SCAN_DIRS: list[str] = [
     "superset/utils/",
@@ -182,6 +185,10 @@ def run_pipeline(dry_run: bool = False) -> None:
         logger.error("DEVIN_API_TOKEN not set — cannot run pipeline")
         sys.exit(1)
 
+    agents_spawned = 0
+    scanner_results: list[dict[str, Any]] = []
+    fixer_prs: list[dict[str, Any]] = []
+
     # --- Stage 1: Scanner agents (one per directory) ---
     logger.info("=== Stage 1: Spawning scanner agents ===")
     scanner_sessions: list[tuple[str, str]] = []
@@ -197,6 +204,7 @@ def run_pipeline(dry_run: bool = False) -> None:
         )
         if sid:
             scanner_sessions.append((sid, directory))
+            agents_spawned += 1
             logger.info("Created scanner for %s (%s)", directory, sid[:8])
         else:
             logger.error("Failed to create scanner for %s", directory)
@@ -213,6 +221,17 @@ def run_pipeline(dry_run: bool = False) -> None:
         result = wait_for_session(sid, token)
         structured = result.get("structured_output", {})
         issues = structured.get("issues_created", [])
+        scanner_results.append(
+            {
+                "directory": directory,
+                "session_id": sid,
+                "issues_created": len(issues),
+                "md_files_created": structured.get("md_files_created", 0),
+                "comments_added": structured.get("comments_added", 0),
+                "docstrings_added": structured.get("docstrings_added", 0),
+                "pr_url": structured.get("pr_url", ""),
+            }
+        )
         all_issues.extend(issues)
         logger.info(
             "Scanner %s done: %d issues created",
@@ -224,11 +243,13 @@ def run_pipeline(dry_run: bool = False) -> None:
 
     if dry_run:
         logger.info("Dry run — skipping fixer agents")
+        _save_results(agents_spawned, all_issues, scanner_results, fixer_prs)
         return
 
     # --- Stage 2: Fixer agents (one per issue) ---
     if not all_issues:
         logger.info("No issues to fix — done")
+        _save_results(agents_spawned, all_issues, scanner_results, fixer_prs)
         return
 
     logger.info("=== Stage 2: Spawning fixer agents ===")
@@ -246,8 +267,17 @@ def run_pipeline(dry_run: bool = False) -> None:
             tags=["tech-debt-scanner", "fixer"],
         )
         if sid:
+            agents_spawned += 1
             logger.info("Created fixer for issue #%s", issue.get("number"))
-            wait_for_session(sid, token)
+            fixer_result = wait_for_session(sid, token)
+            fixer_prs.append(
+                {
+                    "issue_number": issue.get("number"),
+                    "issue_title": issue.get("title", ""),
+                    "session_id": sid,
+                    "status": fixer_result.get("status_enum", "unknown"),
+                }
+            )
         else:
             logger.error(
                 "Failed to create fixer for issue #%s",
@@ -255,6 +285,97 @@ def run_pipeline(dry_run: bool = False) -> None:
             )
 
     logger.info("=== Pipeline Complete ===")
+    _save_results(agents_spawned, all_issues, scanner_results, fixer_prs)
+
+
+def _save_results(
+    agents_spawned: int,
+    issues: list[dict[str, Any]],
+    scanner_results: list[dict[str, Any]],
+    fixer_prs: list[dict[str, Any]],
+) -> None:
+    """Save metrics report and dashboard JSON."""
+    REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+    total_md = sum(s.get("md_files_created", 0) for s in scanner_results)
+    total_comments = sum(s.get("comments_added", 0) for s in scanner_results)
+    total_docstrings = sum(s.get("docstrings_added", 0) for s in scanner_results)
+
+    metrics = {
+        "timestamp": timestamp,
+        "repo": REPO,
+        "agents_spawned": agents_spawned,
+        "total_issues_filed": len(issues),
+        "total_prs_created": len(fixer_prs),
+        "md_files_created": total_md,
+        "comments_added": total_comments,
+        "docstrings_added": total_docstrings,
+        "scanners": scanner_results,
+        "issues": issues,
+        "fixer_prs": fixer_prs,
+    }
+
+    # Save dashboard JSON
+    ts_file = datetime.now(tz=timezone.utc).strftime("%Y%m%d-%H%M%S")
+    data_path = REPORT_DIR / f"dashboard-data-{ts_file}.json"
+    with open(data_path, "w", encoding="utf-8") as fh:
+        json.dump(metrics, fh, indent=2, default=str)
+    logger.info("Dashboard data saved: %s", data_path)
+
+    # Save markdown report
+    report_lines = [
+        "# Tech Debt Scanner Report",
+        "",
+        f"**Repo:** {REPO}",
+        f"**Date:** {timestamp}",
+        "",
+        "## Metrics",
+        "",
+        "| Metric | Value |",
+        "|--------|-------|",
+        f"| Agents Spawned | {agents_spawned} |",
+        f"| Issues Filed | {len(issues)} |",
+        f"| Fix PRs Created | {len(fixer_prs)} |",
+        f"| .md Files Created | {total_md} |",
+        f"| Comments Added | {total_comments} |",
+        f"| Docstrings Added | {total_docstrings} |",
+        "",
+        "## Scanner Results",
+        "",
+    ]
+    for scanner in scanner_results:
+        report_lines.append(f"### {scanner['directory']}")
+        report_lines.append(f"- Issues: {scanner['issues_created']}")
+        report_lines.append(f"- .md files: {scanner['md_files_created']}")
+        report_lines.append(f"- Comments: {scanner['comments_added']}")
+        report_lines.append(f"- Docstrings: {scanner['docstrings_added']}")
+        if scanner.get("pr_url"):
+            report_lines.append(f"- Docs PR: {scanner['pr_url']}")
+        report_lines.append("")
+
+    if issues:
+        report_lines.append("## Issues Filed")
+        report_lines.append("")
+        for issue in issues:
+            report_lines.append(
+                f"- [{issue.get('title', 'Untitled')}]({issue.get('url', '')})"
+            )
+        report_lines.append("")
+
+    report_path = REPORT_DIR / f"report-{ts_file}.md"
+    with open(report_path, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(report_lines))
+    logger.info("Report saved: %s", report_path)
+
+    # Print summary
+    logger.info(
+        "Agents: %d | Issues: %d | PRs: %d | .md: %d",
+        agents_spawned,
+        len(issues),
+        len(fixer_prs),
+        total_md,
+    )
 
 
 def main() -> None:
