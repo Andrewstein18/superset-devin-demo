@@ -174,6 +174,51 @@ under the License.
   .api-key-section input:focus { border-color: var(--accent); }
   .api-key-section .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
 
+  /* Active Agents Tab */
+  .agents-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .agents-header h3 { font-size: 16px; font-weight: 600; }
+  .agents-header .refresh-btn { padding: 6px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: var(--muted); cursor: pointer; font-size: 12px; transition: border-color 0.2s; }
+  .agents-header .refresh-btn:hover { border-color: var(--accent); color: var(--text); }
+  .agents-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+  .agent-stat { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: center; }
+  .agent-stat .stat-num { font-size: 32px; font-weight: 700; line-height: 1.2; }
+  .agent-stat .stat-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .agent-stat.scanners .stat-num { color: var(--accent); }
+  .agent-stat.fixers .stat-num { color: var(--purple); }
+  .agent-stat.idle .stat-num { color: var(--green); }
+  .graph-section { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 24px; margin-bottom: 24px; }
+  .graph-section h4 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; }
+  .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+  .bar-row { display: flex; align-items: center; gap: 12px; }
+  .bar-row .bar-label { min-width: 180px; font-size: 13px; font-family: 'SF Mono', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-row .bar-track { flex: 1; height: 24px; background: var(--bg); border-radius: 4px; overflow: hidden; position: relative; display: flex; }
+  .bar-row .bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding: 0 8px; font-size: 11px; font-weight: 600; color: #fff; transition: width 0.4s ease; }
+  .bar-row .bar-fill.scanner { background: var(--accent); }
+  .bar-row .bar-fill.fixer { background: var(--purple); }
+  .bar-row .bar-count { min-width: 24px; text-align: right; font-size: 13px; font-weight: 600; color: var(--text); }
+  .legend { display: flex; gap: 20px; margin-top: 16px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+  .legend-dot.scanner { background: var(--accent); }
+  .legend-dot.fixer { background: var(--purple); }
+  .agent-list { display: flex; flex-direction: column; gap: 8px; }
+  .agent-row { display: grid; grid-template-columns: auto 1fr auto auto; gap: 12px; align-items: center; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; }
+  .agent-row .agent-type { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
+  .agent-row .agent-type.scanner { background: rgba(88,166,255,0.15); color: var(--accent); }
+  .agent-row .agent-type.fixer { background: rgba(188,140,255,0.15); color: var(--purple); }
+  .agent-row .agent-dir { font-size: 13px; font-family: 'SF Mono', monospace; }
+  .agent-row .agent-status { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
+  .agent-row .agent-status.running { background: rgba(88,166,255,0.15); color: var(--accent); }
+  .agent-row .agent-status.completed { background: rgba(63,185,80,0.15); color: var(--green); }
+  .agent-row .agent-status.queued { background: rgba(210,153,34,0.15); color: var(--orange); }
+  .agent-row a { color: var(--accent); text-decoration: none; font-size: 12px; }
+  .agents-empty { text-align: center; color: var(--muted); padding: 60px 20px; }
+  .agents-empty p { margin-bottom: 12px; }
+  .agents-api-input { display: flex; gap: 8px; max-width: 400px; margin: 0 auto; }
+  .agents-api-input input { flex: 1; padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 13px; font-family: 'SF Mono', monospace; outline: none; }
+  .agents-api-input input:focus { border-color: var(--accent); }
+  .agents-api-input button { padding: 8px 16px; background: var(--accent); color: #fff; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; }
+
   /* Footer */
   footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border); }
   footer a { color: var(--accent); text-decoration: none; }
@@ -190,6 +235,7 @@ under the License.
 <!-- Tab Navigation -->
 <div class="tabs">
   <div class="tab active" onclick="switchTab('dashboard')">Dashboard</div>
+  <div class="tab" onclick="switchTab('agents')">Active Agents</div>
   <div class="tab" onclick="switchTab('run')">Run Scanner</div>
 </div>
 
@@ -311,6 +357,53 @@ under the License.
 </div>
 
 </div><!-- end tab-run -->
+
+<!-- ==================== ACTIVE AGENTS TAB ==================== -->
+<div class="tab-content" id="tab-agents">
+
+<div class="agents-header">
+  <h3>Active Devin Agents</h3>
+  <button class="refresh-btn" onclick="refreshAgents()">Refresh</button>
+</div>
+
+<div class="agents-summary">
+  <div class="agent-stat scanners">
+    <div class="stat-num" id="scanner-count">--</div>
+    <div class="stat-label">Scanners Running</div>
+  </div>
+  <div class="agent-stat fixers">
+    <div class="stat-num" id="fixer-count">--</div>
+    <div class="stat-label">Fixers Running</div>
+  </div>
+  <div class="agent-stat idle">
+    <div class="stat-num" id="completed-count">--</div>
+    <div class="stat-label">Completed</div>
+  </div>
+</div>
+
+<div class="graph-section">
+  <h4>Agents by Directory</h4>
+  <div id="agents-bar-chart" class="bar-chart"></div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot scanner"></div>Scanner</div>
+    <div class="legend-item"><div class="legend-dot fixer"></div>Fixer</div>
+  </div>
+</div>
+
+<div class="graph-section">
+  <h4>All Sessions</h4>
+  <div id="agents-list" class="agent-list">
+    <div class="agents-empty">
+      <p>Enter your Devin API token to view active agents</p>
+      <div class="agents-api-input">
+        <input type="password" id="agents-api-token" placeholder="cog_...">
+        <button onclick="refreshAgents()">Load</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end tab-agents -->
 
 <footer>
   Powered by <a href="https://devin.ai">Devin AI</a> &middot; Runs every Sunday 8am UTC
@@ -757,6 +850,127 @@ async function pollSessions(token) {
       fetchData();
     }
   }, 15000);
+}
+
+// ==================== ACTIVE AGENTS TAB ====================
+let agentsPollInterval = null;
+
+async function refreshAgents() {
+  const token = document.getElementById('agents-api-token').value.trim() || document.getElementById('api-token').value.trim();
+  if (!token) {
+    alert('Please enter your Devin API token');
+    return;
+  }
+
+  try {
+    const resp = await fetch(`${DEVIN_API}/sessions`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!resp.ok) throw new Error(`API returned ${resp.status}`);
+    const data = await resp.json();
+    const sessions = data.sessions || data || [];
+    renderAgentsView(sessions);
+
+    if (!agentsPollInterval) {
+      agentsPollInterval = setInterval(() => refreshAgents(), 20000);
+    }
+  } catch (e) {
+    document.getElementById('agents-list').innerHTML = `<div class="agents-empty"><p style="color:var(--red)">Error: ${e.message}</p><div class="agents-api-input"><input type="password" id="agents-api-token" placeholder="cog_..."><button onclick="refreshAgents()">Retry</button></div></div>`;
+  }
+}
+
+function renderAgentsView(sessions) {
+  const techDebtSessions = sessions.filter(s =>
+    (s.title && (s.title.includes('Scanner') || s.title.includes('Fixer') || s.title.includes('tech-debt'))) ||
+    (s.tags && s.tags.some(t => t.includes('tech-debt')))
+  );
+
+  const scanners = techDebtSessions.filter(s => s.title && s.title.toLowerCase().includes('scanner'));
+  const fixers = techDebtSessions.filter(s => s.title && s.title.toLowerCase().includes('fix'));
+
+  const running = techDebtSessions.filter(s => s.status_enum === 'running' || s.status === 'running');
+  const completed = techDebtSessions.filter(s => s.status_enum === 'stopped' || s.status_enum === 'finished' || s.status === 'stopped');
+
+  const runningS = scanners.filter(s => s.status_enum === 'running' || s.status === 'running').length;
+  const runningF = fixers.filter(s => s.status_enum === 'running' || s.status === 'running').length;
+
+  document.getElementById('scanner-count').textContent = runningS;
+  document.getElementById('fixer-count').textContent = runningF;
+  document.getElementById('completed-count').textContent = completed.length;
+
+  renderBarChart(techDebtSessions);
+  renderAgentsList(techDebtSessions);
+}
+
+function renderBarChart(sessions) {
+  const container = document.getElementById('agents-bar-chart');
+  const dirMap = {};
+
+  sessions.forEach(s => {
+    const dir = extractDir(s.title || '');
+    if (!dirMap[dir]) dirMap[dir] = { scanners: 0, fixers: 0 };
+    if (s.title && s.title.toLowerCase().includes('scanner')) dirMap[dir].scanners++;
+    else dirMap[dir].fixers++;
+  });
+
+  const dirs = Object.keys(dirMap).sort();
+  if (!dirs.length) {
+    container.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px;">No agent sessions found</div>';
+    return;
+  }
+
+  const maxCount = Math.max(...dirs.map(d => dirMap[d].scanners + dirMap[d].fixers), 1);
+
+  container.innerHTML = dirs.map(dir => {
+    const d = dirMap[dir];
+    const total = d.scanners + d.fixers;
+    const scannerWidth = Math.round((d.scanners / maxCount) * 100);
+    const fixerWidth = Math.round((d.fixers / maxCount) * 100);
+    return `<div class="bar-row">
+      <span class="bar-label" title="${dir}">${dir}</span>
+      <div class="bar-track">
+        ${d.scanners ? `<div class="bar-fill scanner" style="width:${scannerWidth}%">${d.scanners}</div>` : ''}
+        ${d.fixers ? `<div class="bar-fill fixer" style="width:${fixerWidth}%">${d.fixers}</div>` : ''}
+      </div>
+      <span class="bar-count">${total}</span>
+    </div>`;
+  }).join('');
+}
+
+function extractDir(title) {
+  const match = title.match(/(?:Scanner|Fixer|Fix)(?::\s*|\s+for\s+)([\w\-_/]+)/i);
+  if (match) return match[1];
+  const issueMatch = title.match(/#\d+/);
+  if (issueMatch) return 'issue ' + issueMatch[0];
+  return title.slice(0, 30) || 'unknown';
+}
+
+function renderAgentsList(sessions) {
+  const container = document.getElementById('agents-list');
+  if (!sessions.length) {
+    container.innerHTML = '<div class="agents-empty"><p>No tech debt agent sessions found</p></div>';
+    return;
+  }
+
+  const sorted = [...sessions].sort((a, b) => {
+    const statusOrder = { running: 0, queued: 1, stopped: 2, finished: 2 };
+    return (statusOrder[a.status_enum || a.status] || 3) - (statusOrder[b.status_enum || b.status] || 3);
+  });
+
+  container.innerHTML = sorted.map(s => {
+    const type = (s.title && s.title.toLowerCase().includes('scanner')) ? 'scanner' : 'fixer';
+    const status = s.status_enum || s.status || 'unknown';
+    const statusClass = status === 'running' ? 'running' : (status === 'stopped' || status === 'finished') ? 'completed' : 'queued';
+    const statusLabel = status === 'running' ? 'Running' : (status === 'stopped' || status === 'finished') ? 'Done' : 'Queued';
+    const dir = extractDir(s.title || '');
+    const url = s.url || `https://app.devin.ai/sessions/${s.session_id}`;
+    return `<div class="agent-row">
+      <span class="agent-type ${type}">${type}</span>
+      <span class="agent-dir">${dir}</span>
+      <span class="agent-status ${statusClass}">${statusLabel}</span>
+      <a href="${url}" target="_blank">View &rarr;</a>
+    </div>`;
+  }).join('');
 }
 
 // ==================== INIT ====================
