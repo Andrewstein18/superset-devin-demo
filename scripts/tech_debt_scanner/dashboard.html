@@ -129,18 +129,25 @@ under the License.
   /* Run Scanner Tab */
   .run-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 24px; margin-bottom: 32px; }
   .run-panel h3 { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
-  .dir-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
-  .dir-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; transition: border-color 0.2s; }
-  .dir-item:hover { border-color: var(--accent); }
-  .dir-item.selected { border-color: var(--accent); background: rgba(88,166,255,0.05); }
-  .dir-item input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; }
-  .dir-item label { font-size: 14px; cursor: pointer; flex: 1; }
-  .dir-item .dir-desc { font-size: 12px; color: var(--muted); }
-  .custom-dir { display: flex; gap: 8px; margin-bottom: 20px; }
-  .custom-dir input { flex: 1; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 14px; outline: none; }
-  .custom-dir input:focus { border-color: var(--accent); }
-  .custom-dir button { padding: 10px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: var(--text); cursor: pointer; font-size: 13px; }
-  .custom-dir button:hover { border-color: var(--accent); }
+  .tree-container { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 20px; max-height: 400px; overflow-y: auto; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; }
+  .tree-node { padding: 2px 0; }
+  .tree-node .node-row { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 4px; cursor: pointer; transition: background 0.15s; }
+  .tree-node .node-row:hover { background: rgba(88,166,255,0.08); }
+  .tree-node .node-row.selected { background: rgba(88,166,255,0.12); }
+  .tree-node .toggle { width: 16px; text-align: center; color: var(--muted); font-size: 11px; user-select: none; }
+  .tree-node .icon { font-size: 14px; }
+  .tree-node .name { flex: 1; color: var(--text); }
+  .tree-node .node-row.selected .name { color: var(--accent); }
+  .tree-node input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px; }
+  .tree-children { margin-left: 20px; }
+  .tree-children.collapsed { display: none; }
+  .selected-dirs { margin-bottom: 20px; }
+  .selected-dirs h4 { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .selected-dirs .chip-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .selected-dirs .chip { display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: rgba(88,166,255,0.1); border: 1px solid rgba(88,166,255,0.3); border-radius: 4px; font-size: 12px; color: var(--accent); font-family: 'SF Mono', monospace; }
+  .selected-dirs .chip .remove { cursor: pointer; color: var(--muted); font-size: 14px; margin-left: 4px; }
+  .selected-dirs .chip .remove:hover { color: var(--red); }
+  .tree-loading { text-align: center; color: var(--muted); padding: 24px; }
   .run-btn { display: flex; align-items: center; gap: 8px; padding: 12px 32px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
   .run-btn:hover { opacity: 0.9; }
   .run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -268,37 +275,14 @@ under the License.
 
 <div class="run-panel">
   <h3>Select Directories to Scan</h3>
-  <div class="dir-list" id="dir-list">
-    <div class="dir-item selected" onclick="toggleDir(this)">
-      <input type="checkbox" checked data-dir="superset/utils/">
-      <label>superset/utils/</label>
-      <span class="dir-desc">Python utilities &mdash; security, caching, dates</span>
-    </div>
-    <div class="dir-item selected" onclick="toggleDir(this)">
-      <input type="checkbox" checked data-dir="superset-frontend/src/explore/">
-      <label>superset-frontend/src/explore/</label>
-      <span class="dir-desc">Chart builder &mdash; TypeScript/React components</span>
-    </div>
-    <div class="dir-item" onclick="toggleDir(this)">
-      <input type="checkbox" data-dir="superset/tasks/">
-      <label>superset/tasks/</label>
-      <span class="dir-desc">Celery async tasks &mdash; thumbnails, queries</span>
-    </div>
-    <div class="dir-item" onclick="toggleDir(this)">
-      <input type="checkbox" data-dir="superset/views/">
-      <label>superset/views/</label>
-      <span class="dir-desc">Flask views &mdash; API endpoints, routes</span>
-    </div>
-    <div class="dir-item" onclick="toggleDir(this)">
-      <input type="checkbox" data-dir="superset/connectors/">
-      <label>superset/connectors/</label>
-      <span class="dir-desc">Database connectors &mdash; SQLAlchemy, Druid</span>
-    </div>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Browse the repository tree and select directories to scan. Each selected directory will be scanned recursively.</p>
+  <div class="tree-container" id="tree-container">
+    <div class="tree-loading">Loading repository tree from GitHub...</div>
   </div>
 
-  <div class="custom-dir">
-    <input type="text" id="custom-dir-input" placeholder="Add custom directory path (e.g., superset/models/)">
-    <button onclick="addCustomDir()">+ Add</button>
+  <div class="selected-dirs" id="selected-dirs" style="display:none;">
+    <h4>Selected for scanning</h4>
+    <div class="chip-list" id="chip-list"></div>
   </div>
 
   <div class="api-key-section">
@@ -515,24 +499,142 @@ function renderFallback() {
 // ==================== RUN SCANNER TAB LOGIC ====================
 let activeSessions = [];
 let runLogEntries = [];
+let selectedDirs = new Set();
+let treeData = null;
 
-function toggleDir(el) {
-  const cb = el.querySelector('input[type="checkbox"]');
-  cb.checked = !cb.checked;
-  el.classList.toggle('selected', cb.checked);
+async function loadRepoTree() {
+  const container = document.getElementById('tree-container');
+  try {
+    const resp = await fetch(`${API}/git/trees/master?recursive=1`);
+    if (!resp.ok) throw new Error('Failed to fetch tree');
+    const data = await resp.json();
+    const dirs = data.tree.filter(item => item.type === 'tree');
+    treeData = buildTree(dirs);
+    renderTree(treeData, container);
+  } catch (e) {
+    container.innerHTML = '<div class="tree-loading">Failed to load tree. Using default directories.</div>';
+    renderFallbackTree(container);
+  }
 }
 
-function addCustomDir() {
-  const input = document.getElementById('custom-dir-input');
-  const dir = input.value.trim();
-  if (!dir) return;
-  const list = document.getElementById('dir-list');
-  const item = document.createElement('div');
-  item.className = 'dir-item selected';
-  item.onclick = function() { toggleDir(this); };
-  item.innerHTML = `<input type="checkbox" checked data-dir="${dir}"><label>${dir}</label><span class="dir-desc">Custom directory</span>`;
-  list.appendChild(item);
-  input.value = '';
+function buildTree(dirs) {
+  const root = { name: '/', path: '', children: {} };
+  dirs.forEach(d => {
+    const parts = d.path.split('/');
+    let current = root;
+    let pathSoFar = '';
+    parts.forEach((part, i) => {
+      pathSoFar = pathSoFar ? pathSoFar + '/' + part : part;
+      if (!current.children[part]) {
+        current.children[part] = { name: part, path: pathSoFar, children: {} };
+      }
+      current = current.children[part];
+    });
+  });
+  return root;
+}
+
+function renderTree(node, container) {
+  container.innerHTML = '';
+  const topLevelKeys = Object.keys(node.children).sort();
+  topLevelKeys.forEach(key => {
+    container.appendChild(createTreeNode(node.children[key], 0));
+  });
+}
+
+function createTreeNode(node, depth) {
+  const el = document.createElement('div');
+  el.className = 'tree-node';
+  const hasChildren = Object.keys(node.children).length > 0;
+  const row = document.createElement('div');
+  row.className = 'node-row';
+  if (selectedDirs.has(node.path)) row.classList.add('selected');
+
+  const toggle = document.createElement('span');
+  toggle.className = 'toggle';
+  toggle.textContent = hasChildren ? '\u25B6' : '';
+
+  const cb = document.createElement('input');
+  cb.type = 'checkbox';
+  cb.checked = selectedDirs.has(node.path);
+  cb.onclick = (e) => { e.stopPropagation(); toggleSelection(node.path, cb.checked, row); };
+
+  const icon = document.createElement('span');
+  icon.className = 'icon';
+  icon.textContent = '\uD83D\uDCC1';
+
+  const name = document.createElement('span');
+  name.className = 'name';
+  name.textContent = node.name + '/';
+
+  row.appendChild(toggle);
+  row.appendChild(cb);
+  row.appendChild(icon);
+  row.appendChild(name);
+  el.appendChild(row);
+
+  if (hasChildren) {
+    const childContainer = document.createElement('div');
+    childContainer.className = 'tree-children collapsed';
+    Object.keys(node.children).sort().forEach(key => {
+      childContainer.appendChild(createTreeNode(node.children[key], depth + 1));
+    });
+    el.appendChild(childContainer);
+
+    row.onclick = (e) => {
+      if (e.target === cb) return;
+      const collapsed = childContainer.classList.toggle('collapsed');
+      toggle.textContent = collapsed ? '\u25B6' : '\u25BC';
+    };
+  }
+
+  return el;
+}
+
+function toggleSelection(path, checked, row) {
+  if (checked) {
+    selectedDirs.add(path);
+    row.classList.add('selected');
+  } else {
+    selectedDirs.delete(path);
+    row.classList.remove('selected');
+  }
+  renderChips();
+}
+
+function renderChips() {
+  const section = document.getElementById('selected-dirs');
+  const list = document.getElementById('chip-list');
+  if (selectedDirs.size === 0) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = 'block';
+  list.innerHTML = Array.from(selectedDirs).sort().map(dir =>
+    `<div class="chip">${dir}/<span class="remove" onclick="removeDir('${dir}')">&times;</span></div>`
+  ).join('');
+}
+
+function removeDir(path) {
+  selectedDirs.delete(path);
+  renderChips();
+  const cb = document.querySelector(`#tree-container input[type="checkbox"]`);
+  document.querySelectorAll('#tree-container .node-row').forEach(row => {
+    const nameEl = row.querySelector('.name');
+    if (nameEl && nameEl.textContent === path.split('/').pop() + '/') {
+      const cbEl = row.querySelector('input[type="checkbox"]');
+      if (cbEl && cbEl.checked) { cbEl.checked = false; row.classList.remove('selected'); }
+    }
+  });
+}
+
+function renderFallbackTree(container) {
+  const fallbackDirs = ['superset/', 'superset/utils/', 'superset/tasks/', 'superset/views/', 'superset/connectors/', 'superset/models/', 'superset-frontend/', 'superset-frontend/src/', 'superset-frontend/src/explore/', 'superset-frontend/src/dashboard/', 'superset-frontend/src/SqlLab/', 'tests/'];
+  container.innerHTML = '';
+  fallbackDirs.forEach(dir => {
+    const node = { name: dir.replace(/\/$/, ''), path: dir.replace(/\/$/, ''), children: {} };
+    container.appendChild(createTreeNode(node, 0));
+  });
 }
 
 function addRunLog(msg, type) {
@@ -568,10 +670,7 @@ async function runScanner() {
     return;
   }
 
-  const dirs = [];
-  document.querySelectorAll('#dir-list input[type="checkbox"]:checked').forEach(cb => {
-    dirs.push(cb.dataset.dir);
-  });
+  const dirs = Array.from(selectedDirs);
   if (!dirs.length) {
     alert('Please select at least one directory to scan');
     return;
@@ -662,6 +761,7 @@ async function pollSessions(token) {
 
 // ==================== INIT ====================
 fetchData();
+loadRepoTree();
 </script>
 </body>
 </html>
