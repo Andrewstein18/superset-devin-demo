@@ -83,7 +83,9 @@ Scan ONLY the directory: {directory}
 4. Add helpful inline comments and docstrings to undocumented functions.
 5. Create a GitHub issue for EACH finding with:
    - Title: "[Tech Debt] <brief description>"
-   - Labels: tech-debt, automated-cleanup
+   - Labels: tech-debt, automated-cleanup, severity:<level>
+     where <level> is one of: critical, high, medium, low
+     Example: tech-debt, automated-cleanup, severity:high
    - Body must include: file, line, severity (critical/high/medium/low),
      category (security/type-safety/dead-code), description, suggested fix
 6. Open ONE PR with all your .md files and added comments/docstrings.
@@ -114,14 +116,15 @@ Severity: {severity}
 Category: {category}
 
 ## Instructions
-1. Read the issue and understand the problem fully
-2. Read the actual source code to understand the context — trace call chains
-3. Implement the fix. You may spawn sub-agents for complex fixes.
-4. Run `pre-commit run --all-files` before committing
+1. Clone the repo: git clone https://github.com/{repo}.git
+2. Read the issue and understand the problem fully
+3. Read the actual source code to understand the context — trace call chains
+4. Implement the fix on a new branch
 5. Open a PR that fixes this issue
-   - Reference the issue in the PR body ("Fixes #{issue_number}")
+   - Use "Fixes #{issue_number}" in the PR body so GitHub auto-closes the issue
    - Labels: tech-debt, automated-cleanup
-   - Include severity and category in the PR description
+   - Include severity ({severity}) and category ({category}) in the PR description
+6. Keep the fix focused and minimal
 """
 
 
