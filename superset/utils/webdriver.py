@@ -53,28 +53,54 @@ PLAYWRIGHT_INSTALL_MESSAGE = (
 )
 
 if TYPE_CHECKING:
-    from typing import Any
-
     from flask_appbuilder.security.sqla.models import User
+
+    try:
+        from playwright.sync_api import BrowserContext, Locator, Page
+    except ImportError:
+        from typing import Protocol
+
+        class Locator(Protocol):  # type: ignore[no-redef]  # noqa: E302
+            def screenshot(self) -> bytes: ...
+            def wait_for(self, **kwargs: object) -> None: ...
+            def all(self) -> list[Locator]: ...
+            def click(self) -> None: ...
+            def text_content(self) -> str | None: ...
+            def inner_html(self) -> str: ...
+            def evaluate(self, expression: str, arg: object = ...) -> object: ...
+            def get_by_role(self, role: str) -> Locator: ...
+
+        class Page(Protocol):  # type: ignore[no-redef]  # noqa: E302
+            def screenshot(self, *, full_page: bool = ...) -> bytes: ...
+            def goto(self, url: str, **kwargs: object) -> None: ...
+            def locator(self, selector: str) -> Locator: ...
+            def get_by_role(self, role: str) -> Locator: ...
+            def wait_for_timeout(self, timeout: float) -> None: ...
+            def wait_for_function(self, expression: str, **kwargs: object) -> None: ...
+            def evaluate(self, expression: str) -> object: ...
+            def set_viewport_size(self, viewport_size: dict[str, int]) -> None: ...
+
+        class BrowserContext(Protocol):  # type: ignore[no-redef]  # noqa: E302
+            def new_page(self) -> Page: ...
+            def set_default_timeout(self, timeout: float) -> None: ...
+            def clear_cookies(self) -> None: ...
+            def add_cookies(self, cookies: list[dict[str, object]]) -> None: ...
+
 
 try:
     from playwright.sync_api import (
-        BrowserContext,
         Error as PlaywrightError,
-        Locator,
-        Page,
         sync_playwright,
         TimeoutError as PlaywrightTimeout,
     )
 except ImportError:
-    from typing import Any
 
-    # Define dummy classes when playwright is not available
-    BrowserContext = Any
-    PlaywrightError = Exception
-    PlaywrightTimeout = Exception
-    Locator = Any
-    Page = Any
+    class PlaywrightError(Exception):  # type: ignore[no-redef]
+        pass
+
+    class PlaywrightTimeout(Exception):  # type: ignore[no-redef]  # noqa: N818
+        pass
+
     sync_playwright = None
 
 

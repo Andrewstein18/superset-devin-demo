@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, TYPE_CHECKING
+from typing import Callable, TYPE_CHECKING
 from urllib.parse import urlparse
 
 from flask import current_app as app, Flask, request, Response, session
@@ -37,7 +37,12 @@ if TYPE_CHECKING:
     try:
         from playwright.sync_api import BrowserContext
     except ModuleNotFoundError:
-        BrowserContext = Any
+        from typing import Protocol
+
+        class BrowserContext(Protocol):  # type: ignore[no-redef]  # noqa: E302
+            def new_page(self) -> object: ...
+            def clear_cookies(self) -> None: ...
+            def add_cookies(self, cookies: list[dict[str, str]]) -> None: ...
 
 
 class MachineAuthProvider:
@@ -157,4 +162,8 @@ class MachineAuthProviderFactory:
 
     @property
     def instance(self) -> MachineAuthProvider:
-        return self._auth_provider  # type: ignore
+        if self._auth_provider is None:
+            raise RuntimeError(
+                "MachineAuthProviderFactory not initialized. Call init_app() first."
+            )
+        return self._auth_provider
