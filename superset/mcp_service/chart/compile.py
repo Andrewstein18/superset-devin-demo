@@ -162,6 +162,7 @@ def _compile_chart(
     from superset.common.query_context_factory import QueryContextFactory
     from superset.mcp_service.chart.chart_utils import adhoc_filters_to_query_filters
     from superset.mcp_service.chart.preview_utils import _build_query_columns
+    from superset.utils.core import DatasourceType
 
     try:
         columns = _build_query_columns(form_data)
@@ -180,7 +181,7 @@ def _compile_chart(
 
         factory = QueryContextFactory()
         query_context = factory.create(
-            datasource={"id": dataset_id, "type": "table"},
+            datasource={"id": dataset_id, "type": DatasourceType.TABLE},
             queries=[
                 {
                     "columns": columns,

@@ -25,7 +25,7 @@ from superset.common.query_context_factory import QueryContextFactory
 from superset.common.utils.query_cache_manager import QueryCacheManager
 from superset.constants import CacheRegion
 from superset.daos.datasource import DatasourceDAO
-from superset.utils.core import QueryStatus
+from superset.utils.core import DatasourceType, QueryStatus
 from superset.views.datasource.schemas import SamplesPayloadSchema
 
 logger = logging.getLogger(__name__)
@@ -110,7 +110,7 @@ def get_samples(  # pylint: disable=too-many-arguments
         # constructing samples query
         samples_instance = QueryContextFactory().create(
             datasource={
-                "type": datasource.type,
+                "type": DatasourceType(datasource.type),
                 "id": datasource.id,
             },
             queries=[limit_clause],
@@ -127,7 +127,7 @@ def get_samples(  # pylint: disable=too-many-arguments
         # so it is not applicable drill detail query
         samples_instance = QueryContextFactory().create(
             datasource={
-                "type": datasource.type,
+                "type": DatasourceType(datasource.type),
                 "id": datasource.id,
             },
             queries=[{**payload, **limit_clause}],
@@ -148,7 +148,7 @@ def get_samples(  # pylint: disable=too-many-arguments
     }
     count_star_instance = QueryContextFactory().create(
         datasource={
-            "type": datasource.type,
+            "type": DatasourceType(datasource.type),
             "id": datasource.id,
         },
         queries=[{**payload, **count_star_metric} if payload else count_star_metric],

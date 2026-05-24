@@ -50,6 +50,7 @@ from superset.mcp_service.privacy import (
 from superset.mcp_service.utils import _is_uuid
 from superset.mcp_service.utils.cache_utils import get_cache_status_from_result
 from superset.mcp_service.utils.oauth2_utils import build_oauth2_redirect_message
+from superset.utils.core import DatasourceType
 
 logger = logging.getLogger(__name__)
 
@@ -331,7 +332,7 @@ async def query_dataset(  # noqa: C901
             # layers (dbt, Snowflake Cortex, etc.) use "semantic_view" and have
             # a different query path — see SemanticView + mapper.py.
             query_context = factory.create(
-                datasource={"id": dataset.id, "type": "table"},
+                datasource={"id": dataset.id, "type": DatasourceType.TABLE},
                 queries=[query_dict],
                 form_data={},
                 force=not request.use_cache or request.force_refresh,
