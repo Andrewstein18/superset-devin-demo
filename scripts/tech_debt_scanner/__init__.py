@@ -14,8 +14,8 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-"""Tech debt scanner and automated cleanup orchestrator.
+"""Autonomous issue remediation engine.
 
-Multi-stage pipeline using Devin child agents to scan, document,
-and fix tech debt across the Superset codebase.
+Event-driven pipeline: a labeled GitHub issue triggers a Devin agent
+that reads the issue, implements the fix, and opens a PR.
 """
