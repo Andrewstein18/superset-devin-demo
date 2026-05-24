@@ -1,0 +1,83 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+name: Create Issue and Trigger Devin
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue_title:
+        description: 'Title for the GitHub issue'
+        required: true
+        type: string
+      issue_body:
+        description: 'Description/body for the GitHub issue'
+        required: true
+        type: string
+      labels:
+        description: 'Comma-separated labels (e.g. "bug,automated")'
+        required: false
+        type: string
+        default: ''
+      skip_devin:
+        description: 'Only create the issue without triggering Devin'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  create-issue-and-trigger:
+    name: Create Issue & Trigger Devin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Create issue and trigger Devin session
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEVIN_API_TOKEN: ${{ secrets.DEVIN_API_TOKEN }}
+          INPUT_TITLE: ${{ inputs.issue_title }}
+          INPUT_BODY: ${{ inputs.issue_body }}
+          INPUT_LABELS: ${{ inputs.labels }}
+          INPUT_SKIP_DEVIN: ${{ inputs.skip_devin }}
+        run: |
+          LABEL_ARGS=""
+          if [ -n "$INPUT_LABELS" ]; then
+            IFS=',' read -ra LABELS <<< "$INPUT_LABELS"
+            for label in "${LABELS[@]}"; do
+              LABEL_ARGS="$LABEL_ARGS --label $(echo "$label" | xargs)"
+            done
+          fi
+
+          SKIP_FLAG=""
+          if [ "$INPUT_SKIP_DEVIN" = "true" ]; then
+            SKIP_FLAG="--skip-devin"
+          fi
+
+          python scripts/devin_trigger.py \
+            --repo "${{ github.repository }}" \
+            --title "$INPUT_TITLE" \
+            --body "$INPUT_BODY" \
+            $LABEL_ARGS \
+            $SKIP_FLAG

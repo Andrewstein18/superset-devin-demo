@@ -14,10 +14,12 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+from __future__ import annotations
+
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 from flask import Flask
 from flask_babel import lazy_gettext as _
@@ -48,9 +50,9 @@ class AbstractEncryptedFieldAdapter(ABC):  # pylint: disable=too-few-public-meth
     @abstractmethod
     def create(
         self,
-        app_config: Optional[dict[str, Any]],
+        app_config: dict[str, Any] | None,
         *args: list[Any],
-        **kwargs: Optional[dict[str, Any]],
+        **kwargs: dict[str, Any] | None,
     ) -> TypeDecorator:
         pass
 
@@ -60,9 +62,9 @@ class SQLAlchemyUtilsAdapter(  # pylint: disable=too-few-public-methods
 ):
     def create(
         self,
-        app_config: Optional[dict[str, Any]],
+        app_config: dict[str, Any] | None,
         *args: list[Any],
-        **kwargs: Optional[dict[str, Any]],
+        **kwargs: dict[str, Any] | None,
     ) -> TypeDecorator:
         if app_config:
             return EncryptedType(*args, lambda: app_config["SECRET_KEY"], **kwargs)
@@ -74,8 +76,8 @@ class SQLAlchemyUtilsAdapter(  # pylint: disable=too-few-public-methods
 
 class EncryptedFieldFactory:
     def __init__(self) -> None:
-        self._concrete_type_adapter: Optional[AbstractEncryptedFieldAdapter] = None
-        self._config: Optional[dict[str, Any]] = None
+        self._concrete_type_adapter: AbstractEncryptedFieldAdapter | None = None
+        self._config: dict[str, Any] | None = None
 
     def init_app(self, app: Flask) -> None:
         self._config = app.config
@@ -84,7 +86,7 @@ class EncryptedFieldFactory:
         ]()
 
     def create(
-        self, *args: list[Any], **kwargs: Optional[dict[str, Any]]
+        self, *args: list[Any], **kwargs: dict[str, Any] | None
     ) -> TypeDecorator:
         if self._concrete_type_adapter:
             adapter = self._concrete_type_adapter.create(self._config, *args, **kwargs)
@@ -149,7 +151,7 @@ class SecretsMigrator:
         return meta_info
 
     @staticmethod
-    def _read_bytes(col_name: str, value: Any) -> Optional[bytes]:
+    def _read_bytes(col_name: str, value: Any) -> bytes | None:
         if value is None or isinstance(value, bytes):
             return value
         # Note that the Postgres Driver returns memoryview's for BLOB types
