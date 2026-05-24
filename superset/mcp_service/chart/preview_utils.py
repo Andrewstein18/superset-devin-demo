@@ -92,6 +92,7 @@ def generate_preview_from_form_data(
         from superset.mcp_service.chart.chart_utils import (
             adhoc_filters_to_query_filters,
         )
+        from superset.utils.core import DatasourceType
 
         # Build columns list: include x_axis and groupby for XY charts,
         # fall back to form_data "columns" for table charts
@@ -112,7 +113,7 @@ def generate_preview_from_form_data(
 
         factory = QueryContextFactory()
         query_context_obj = factory.create(
-            datasource={"id": dataset_id, "type": "table"},
+            datasource={"id": dataset_id, "type": DatasourceType.TABLE},
             queries=[
                 {
                     "columns": columns,

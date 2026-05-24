@@ -505,6 +505,7 @@ def build_query_context_from_form_data(
     """Build a QueryContext from chart-type-aware Explore form_data."""
     # avoid circular import
     from superset.common.query_context_factory import QueryContextFactory
+    from superset.utils.core import DatasourceType
 
     datasource_id, datasource_type = resolve_form_data_datasource(form_data, chart)
     if not isinstance(datasource_id, (int, str)):
@@ -524,7 +525,7 @@ def build_query_context_from_form_data(
         order_desc=order_desc,
     )
     return QueryContextFactory().create(
-        datasource={"id": datasource_id, "type": datasource_type},
+        datasource={"id": datasource_id, "type": DatasourceType(datasource_type)},
         queries=queries,
         form_data=form_data,
         result_type=result_type,
