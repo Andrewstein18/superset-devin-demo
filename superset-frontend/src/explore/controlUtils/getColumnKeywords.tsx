@@ -22,6 +22,11 @@ import { t } from '@apache-superset/core/translation';
 import { getTooltipHTML } from '@superset-ui/core/components/AsyncAceEditor';
 import { COLUMN_AUTOCOMPLETE_SCORE } from 'src/SqlLab/constants';
 
+/**
+ * Transform datasource column metadata into Ace editor autocomplete entries.
+ * Each entry includes the column name, optional description, type info,
+ * and certification status for display in SQL editor tooltips.
+ */
 export function getColumnKeywords(columns: ColumnMeta[]) {
   return columns.map(
     ({

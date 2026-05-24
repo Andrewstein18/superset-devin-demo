@@ -33,6 +33,10 @@ import {
 } from '@superset-ui/core';
 import { simpleFilterToAdhoc } from 'src/utils/simpleFilterToAdhoc';
 
+/**
+ * For new (unsaved) charts, strip the `isExtra` flag from dashboard-injected
+ * filters so they behave as regular chart filters rather than overrides.
+ */
 const removeExtraFieldForNewCharts = (
   filters: AdhocFilter[],
   isNewChart: boolean,
@@ -44,6 +48,10 @@ const removeExtraFieldForNewCharts = (
     return filter;
   });
 
+/**
+ * Deduplicate adhoc filters by comparing clause+sqlExpression (freeform)
+ * or operator+subject+comparator (simple) fields.
+ */
 const removeAdhocFilterDuplicates = (filters: AdhocFilter[]) => {
   const isDuplicate = (
     adhocFilter: AdhocFilter,
@@ -74,6 +82,11 @@ const removeAdhocFilterDuplicates = (filters: AdhocFilter[]) => {
   }, [] as AdhocFilter[]);
 };
 
+/**
+ * Merge legacy filter box (extra_filters) data from the dashboard context
+ * into the explore form data. Maps time-related columns to their form data
+ * keys and converts non-time filters to adhoc filter format.
+ */
 const mergeFilterBoxToFormData = (
   exploreFormData: QueryFormData,
   dashboardFormData: JsonObject,
@@ -109,6 +122,11 @@ const mergeFilterBoxToFormData = (
   return filterBoxData;
 };
 
+/**
+ * Merge native dashboard filters (extra_form_data) into the explore form data.
+ * Handles regular field mappings, time grain overrides, extras, adhoc filters,
+ * and simple filter-to-adhoc conversions.
+ */
 const mergeNativeFiltersToFormData = (
   exploreFormData: QueryFormData,
   dashboardFormData: JsonObject,
@@ -191,6 +209,12 @@ const applyTimeRangeFilters = (
   return adhocFilters;
 };
 
+/**
+ * Combine explore form data with dashboard context (filter box + native filters).
+ * Deduplicates adhoc filters, applies time range overrides, and handles
+ * color scheme precedence. For 'overwrite' saves, explore data takes final
+ * precedence; otherwise dashboard context overrides explore data.
+ */
 export const getFormDataWithDashboardContext = (
   exploreFormData: QueryFormData,
   dashboardContextFormData: JsonObject,

@@ -60,11 +60,15 @@ controls (metrics, dimensions, filters), and rendering visualizations.
 
 | Category | Count | Severity |
 |----------|-------|----------|
-| `any` type usage | 225 occurrences across 67 files | High |
-| `eslint-disable` / `@ts-expect-error` | 30+ suppressions | Medium |
-| Stale TODO comments | 20+ across test and source files | Low |
-| `as any` type casts in `store.ts` | 5 in core module | High |
-| `standardizedFormData.ts` eslint suppressions | 8 `no-explicit-any` | High |
+| `: any` type annotations | 122 occurrences across source files | High |
+| `eslint-disable` suppressions | 170 across the module | Medium |
+| `@ts-expect-error` suppressions | 33 total (15 in non-test files) | Medium |
+| Stale TODO/FIXME comments | 83 across test and source files | Low |
+| `as any` type casts in `store.ts` | 4 in core state initialization | High |
+| `standardizedFormData.ts` eslint suppressions | 8 `no-explicit-any` in data transform pipeline | High |
+| Silent error swallowing | `fetchFaveStar` drops network errors without handling | High |
+| `translateToSQL.ts` incomplete operator map | Missing `NOT LIKE` and `TEMPORAL_RANGE` operators | Medium |
+| Class component pattern | `SaveModal.tsx` (842 lines), `TextAreaControl.tsx` use class components | Medium |
 
 ## Connections
 

@@ -45,6 +45,10 @@ export function setDatasource(datasource: Dataset) {
   return { type: SET_DATASOURCE, datasource };
 }
 
+/**
+ * Thunk that updates the active datasource and re-maps form data to
+ * reflect the new datasource's columns and metrics.
+ */
 export function changeDatasource(newDatasource: Dataset) {
   return function (dispatch: Dispatch, getState: () => ExplorePageState) {
     const {

@@ -109,11 +109,21 @@ interface SubjectWithColumnName {
 
 type ComparatorValue = string | number | boolean | null;
 
+/**
+ * Derive the chart key (numeric ID) from explore state.
+ * Prefers the slice's ID, falls back to form_data's slice_id,
+ * and defaults to UNSAVED_CHART_ID (0) for new charts.
+ */
 export function getChartKey(explore: ExploreState): number {
   const { slice, form_data } = explore;
   return slice?.slice_id ?? form_data?.slice_id ?? UNSAVED_CHART_ID;
 }
 
+/**
+ * Return the hostname for chart data requests. When domain sharding is enabled,
+ * rotates through available domains (skipping the main domain at index 0) to
+ * distribute load across multiple hostnames.
+ */
 let requestCounter = 0;
 export function getHostName(allowDomainSharding = false): string {
   let currentIndex = 0;
@@ -132,6 +142,10 @@ export function getHostName(allowDomainSharding = false): string {
   return availableDomains[currentIndex];
 }
 
+/**
+ * Build the URL for fetching annotation data for a given chart.
+ * Returns null if no slice_id is provided.
+ */
 export function getAnnotationJsonUrl(
   slice_id: number | null | undefined,
   force: boolean,
@@ -438,6 +452,12 @@ export const useDebouncedEffect = (
   }, [callback, delay]);
 };
 
+/**
+ * Build a human-readable SQL expression string from filter components.
+ * Handles multi-value operators (IN, NOT IN) with parenthesized lists,
+ * string quoting with escaped single quotes, and operators that have
+ * no comparator (IS NULL, IS NOT NULL, etc.).
+ */
 export const getSimpleSQLExpression = (
   subject?: string | SubjectWithColumnName,
   operator?: string,

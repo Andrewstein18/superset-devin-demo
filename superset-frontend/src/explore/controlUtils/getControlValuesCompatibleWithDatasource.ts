@@ -30,6 +30,11 @@ import {
 import { isEmpty } from 'lodash';
 import AdhocMetric from 'src/explore/components/controls/MetricControl/AdhocMetric';
 
+/**
+ * Check whether a single control value is valid for the given datasource.
+ * Validates column names, saved metric names, and adhoc metric/filter column
+ * references against the datasource's columns and metrics lists.
+ */
 const isControlValueCompatibleWithDatasource = (
   datasource: Dataset,
   controlState: ControlState,
@@ -90,6 +95,11 @@ const isControlValueCompatibleWithDatasource = (
   return false;
 };
 
+/**
+ * Filter a control's value(s) to only those compatible with the given datasource.
+ * For array values, returns compatible items or falls back to the control's default.
+ * For scalar values, returns the value if compatible, otherwise the default.
+ */
 export const getControlValuesCompatibleWithDatasource = (
   datasource: Dataset,
   controlState: ControlState,

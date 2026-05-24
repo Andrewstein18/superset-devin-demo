@@ -19,6 +19,10 @@
 import { JsonValue, QueryFormData } from '@superset-ui/core';
 import { ControlStateMapping } from '@superset-ui/chart-controls';
 
+/**
+ * Serialize the controls state mapping into a flat QueryFormData object.
+ * Each control's `value` is extracted and keyed by its control name.
+ */
 export function getFormDataFromControls(
   controlsState: ControlStateMapping,
 ): QueryFormData {

@@ -189,6 +189,10 @@ const metric = {
   description: t('Metric'),
 };
 
+/**
+ * Extract column choices from a datasource for use in select controls.
+ * Returns sorted [column_name, display_label] tuples.
+ */
 export function columnChoices(
   datasource: Datasource | null | undefined,
 ): [string, string][] {
