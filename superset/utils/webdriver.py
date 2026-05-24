@@ -94,7 +94,7 @@ def check_playwright_availability() -> bool:
                 executable_path = p.chromium.executable_path
                 if executable_path:
                     return True
-            except Exception:
+            except (AttributeError, PlaywrightError):
                 # Fall back to full launch test if executable_path fails
                 logger.debug(
                     "Executable path check failed, falling back to launch test"
@@ -104,7 +104,7 @@ def check_playwright_availability() -> bool:
             browser = p.chromium.launch(headless=True)
             browser.close()
             return True
-    except Exception as e:
+    except (PlaywrightError, OSError) as e:
         logger.warning(
             "Playwright module is installed but browser launch failed. "
             "Run 'playwright install chromium' to install browser binaries. "
@@ -560,11 +560,11 @@ class WebDriverSelenium(WebDriverProxy):
         # and catch-all exceptions
         try:
             retry_call(driver.close, max_tries=tries)
-        except Exception:  # pylint: disable=broad-except  # noqa: S110
+        except WebDriverException:  # noqa: S110
             pass
         try:
             driver.quit()
-        except Exception:  # pylint: disable=broad-except  # noqa: S110
+        except WebDriverException:  # noqa: S110
             pass
 
     @staticmethod
@@ -664,7 +664,7 @@ class WebDriverSelenium(WebDriverProxy):
                             (By.CLASS_NAME, "grid-container")
                         )
                     )
-                except Exception:
+                except (TimeoutException, WebDriverException):
                     logger.warning(
                         "Selenium timed out waiting for dashboard to draw at url %s",
                         url,

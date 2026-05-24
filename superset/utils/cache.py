@@ -25,10 +25,12 @@ from typing import Any, Callable
 from flask import current_app as app, request
 from flask_caching import Cache
 from flask_caching.backends import NullCache
+from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.wrappers import Response
 
 from superset import db
 from superset.constants import CACHE_DISABLED_TIMEOUT
+from superset.exceptions import SupersetSecurityException
 from superset.extensions import cache_manager
 from superset.models.cache import CacheKey
 from superset.utils.cache_manager import configurable_hash_method
@@ -94,7 +96,7 @@ def set_and_log_cache(
                 datasource_uid=datasource_uid,
             )
             db.session.add(ck)
-    except Exception as ex:  # pylint: disable=broad-except
+    except (SQLAlchemyError, OSError, ValueError) as ex:
         # cache.set call can fail if the backend is down or if
         # the key is too large or whatever other reasons
         logger.warning("Could not cache key %s", cache_key)
@@ -197,7 +199,7 @@ def etag_cache(  # noqa: C901
             if raise_for_access:
                 try:
                     raise_for_access(*args, **kwargs)
-                except Exception:  # pylint: disable=broad-except
+                except SupersetSecurityException:
                     # If there's no access, bypass the cache and let the function
                     # handle the response.
                     return f(*args, **kwargs)
@@ -219,10 +221,10 @@ def etag_cache(  # noqa: C901
                     f, *key_args, **key_kwargs
                 )
                 response = cache.get(cache_key)
-            except Exception:  # pylint: disable=broad-except
+            except (OSError, ValueError) as ex:  # noqa: BLE001
                 if app.debug:
                     raise
-                logger.exception("Exception possibly due to cache backend.")
+                logger.exception("Exception possibly due to cache backend: %s", ex)
 
             # Check if the cache is stale. Default the content_changed_time to now
             # if we don't know when it was last modified.
@@ -264,10 +266,10 @@ def etag_cache(  # noqa: C901
                 # if we have a cache, store the response from the request
                 try:
                     cache.set(cache_key, response, timeout=timeout)
-                except Exception:  # pylint: disable=broad-except
+                except (OSError, ValueError) as ex:  # noqa: BLE001
                     if app.debug:
                         raise
-                    logger.exception("Exception possibly due to cache backend.")
+                    logger.exception("Exception possibly due to cache backend: %s", ex)
 
             return response.make_conditional(request)
 

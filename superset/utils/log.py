@@ -232,7 +232,7 @@ class AbstractEventLogger(ABC):
             # bulk insert
             explode_by = payload.get("explode")
             records = json.loads(payload.get(explode_by))  # type: ignore
-        except Exception:  # pylint: disable=broad-except
+        except (TypeError, ValueError):
             records = [payload]
 
         self.log(
