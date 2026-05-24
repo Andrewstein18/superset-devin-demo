@@ -27,9 +27,4 @@ var CONFIG = {
   HOURS_PER_ISSUE: 4,
   REVIEW_HOURS_PER_PR: 0.5,
   REFRESH_INTERVAL_MS: 60000,
-  // Heuristic per-PR compute cost parameters
-  COST_BASE_ACUS: 0.5,
-  COST_ACUS_PER_FILE: 0.3,
-  COST_ACUS_PER_100_LINES: 0.67,
-  COST_ACU_PRICE_USD: 2.25,
 };

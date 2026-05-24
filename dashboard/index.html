@@ -126,9 +126,6 @@ under the License.
     font-size: 13px;
     color: var(--muted);
     margin-bottom: 24px;
-    line-height: 1.6;
-  }
-  .assumptions-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -149,14 +146,13 @@ under the License.
   }
   .edit-panel.open { display: block; }
   .edit-panel h3 { font-size: 14px; margin-bottom: 12px; }
-  .edit-section { font-size: 13px; font-weight: 600; color: var(--muted); margin: 12px 0 8px 0; }
   .edit-row {
     display: flex;
     align-items: center;
     gap: 12px;
     margin-bottom: 8px;
   }
-  .edit-row label { font-size: 13px; width: 280px; }
+  .edit-row label { font-size: 13px; width: 220px; }
   .edit-row input {
     width: 120px;
     padding: 4px 8px;
@@ -196,7 +192,6 @@ under the License.
   .badge-merged { background: #d1e7dd; color: #0f5132; }
   .badge-open { background: #cff4fc; color: #055160; }
   .badge-closed { background: #f8d7da; color: #842029; }
-  .badge-heuristic { background: #e9ecef; color: #6c757d; font-size: 10px; padding: 1px 6px; vertical-align: middle; }
 
   .empty-state {
     text-align: center;
@@ -264,12 +259,11 @@ under the License.
   <div class="cards cards-headline">
     <div class="card card-hero">
       <div class="card-label">
-        Net $ Saved
+        Estimated $ Saved
         <span class="tooltip-trigger">?
           <span class="tooltip-text">
-            (PRs opened &times; HOURS_PER_ISSUE &times; ENGINEER_HOURLY_RATE)
-            &minus; sum(heuristic compute cost per PR).
-            30-day figure shown; all-time below.
+            (PRs merged &times; HOURS_PER_ISSUE &minus; PRs opened &times; REVIEW_HOURS_PER_PR)
+            &times; ENGINEER_HOURLY_RATE. 30-day figure shown; all-time below.
           </span>
         </span>
       </div>
@@ -336,30 +330,30 @@ under the License.
     </div>
     <div class="card">
       <div class="card-label">
-        Avg Compute Cost / PR
+        Throughput
         <span class="tooltip-trigger">?
-          <span class="tooltip-text">Mean heuristic compute cost across all completed Devin PRs. Based on PR size (files + lines changed).</span>
+          <span class="tooltip-text">PRs merged per week, 4-week rolling average.</span>
         </span>
-        <span class="badge badge-heuristic">heuristic</span>
       </div>
-      <div class="card-value" id="avgComputeCost">-</div>
-      <div class="card-sub">per Devin PR (estimated)</div>
+      <div class="card-value" id="throughput">-</div>
+      <div class="card-sub">PRs merged / week (4-wk avg)</div>
     </div>
   </div>
 
   <!-- Assumptions -->
-  <div class="assumptions" id="assumptionsBar">
-    <div class="assumptions-top">
-      <span id="assumptionsText"></span>
-      <span><a onclick="toggleEdit()">Edit assumptions</a> | <a onclick="clearSavedToken()">Clear saved token</a></span>
-    </div>
-    <div id="costDisclosure" style="margin-top:6px;font-size:12px;"></div>
+  <div class="assumptions">
+    <span>
+      Estimates based on
+      $<span id="aRate">100</span>/hr engineer cost,
+      <span id="aHours">4</span>hr/issue,
+      <span id="aReview">0.5</span>hr/PR review.
+    </span>
+    <span><a onclick="toggleEdit()">Edit assumptions</a> | <a onclick="clearSavedToken()">Clear saved token</a></span>
   </div>
 
   <!-- Edit assumptions panel -->
   <div class="edit-panel" id="editPanel">
     <h3>Edit Assumptions</h3>
-    <div class="edit-section">Engineering cost</div>
     <div class="edit-row">
       <label>Engineer hourly rate (USD)</label>
       <input type="number" id="editRate" value="100" min="1" />
@@ -371,23 +365,6 @@ under the License.
     <div class="edit-row">
       <label>Review hours per PR</label>
       <input type="number" id="editReview" value="0.5" min="0" step="0.25" />
-    </div>
-    <div class="edit-section">Compute cost heuristic</div>
-    <div class="edit-row">
-      <label>Base ACUs per session (codebase warmup)</label>
-      <input type="number" id="editBaseAcus" value="0.5" min="0" step="0.1" />
-    </div>
-    <div class="edit-row">
-      <label>ACUs per file touched</label>
-      <input type="number" id="editAcusPerFile" value="0.3" min="0" step="0.05" />
-    </div>
-    <div class="edit-row">
-      <label>ACUs per 100 lines changed</label>
-      <input type="number" id="editAcusPer100Lines" value="0.67" min="0" step="0.01" />
-    </div>
-    <div class="edit-row">
-      <label>ACU price (USD)</label>
-      <input type="number" id="editAcuPrice" value="2.25" min="0" step="0.25" />
     </div>
     <div class="edit-actions">
       <button class="btn btn-primary" onclick="saveAssumptions()">Save</button>
@@ -408,21 +385,8 @@ under the License.
     <div class="table-section">
       <h3>Recent PRs</h3>
       <table>
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Status</th>
-            <th>Hours Saved</th>
-            <th>
-              Compute Cost
-              <span class="tooltip-trigger" style="vertical-align:middle">?
-                <span class="tooltip-text">Estimated from PR size (files + lines changed). Production deployment would use Devin's enterprise API for actual ACU consumption.</span>
-              </span>
-            </th>
-            <th>Link</th>
-          </tr>
-        </thead>
-        <tbody id="prsTable"><tr><td colspan="5" class="empty-state">Loading...</td></tr></tbody>
+        <thead><tr><th>Title</th><th>Status</th><th>Hours Saved</th><th>Link</th></tr></thead>
+        <tbody id="prsTable"><tr><td colspan="4" class="empty-state">Loading...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -494,9 +458,9 @@ under the License.
   // --- Helpers ---
   function $(id) { return document.getElementById(id); }
   function fmt$(n) { return "$" + n.toLocaleString(undefined, { maximumFractionDigits: 0 }); }
-  function fmtCost(n) { return "$" + n.toFixed(2); }
   function fmtHrs(n) { return n.toFixed(1); }
   function daysBetween(a, b) { return (b - a) / (1000 * 60 * 60 * 24); }
+  function hoursBetween(a, b) { return (b - a) / (1000 * 60 * 60); }
   function ago(dateStr) {
     var d = daysBetween(new Date(dateStr), new Date());
     if (d < 1) return "< 1d";
@@ -505,16 +469,6 @@ under the License.
 
   function isLast30d(dateStr) {
     return daysBetween(new Date(dateStr), new Date()) <= 30;
-  }
-
-  // --- Heuristic compute cost ---
-  function prComputeCost(pr) {
-    var lines = (pr.additions || 0) + (pr.deletions || 0);
-    var files = pr.changed_files || 0;
-    var acus = cfg("COST_BASE_ACUS")
-      + (files * cfg("COST_ACUS_PER_FILE"))
-      + (lines / 100 * cfg("COST_ACUS_PER_100_LINES"));
-    return acus * cfg("COST_ACU_PRICE_USD");
   }
 
   function calcSavings(merged, opened, config) {
@@ -547,10 +501,6 @@ under the License.
     return page(1);
   }
 
-  function fetchPRDetail(repo, prNumber) {
-    return ghFetch("/repos/" + repo + "/pulls/" + prNumber);
-  }
-
   function fetchOpenIssues(repo, label) {
     return ghFetch(
       "/repos/" + repo + "/issues?state=open&labels=" + encodeURIComponent(label) + "&per_page=50"
@@ -577,15 +527,15 @@ under the License.
   }
 
   // --- Render ---
-  function render(issues, prs, detailedPRs, activeSessions) {
+  function render(issues, prs, activeSessions) {
     var c = {
       rate: cfg("ENGINEER_HOURLY_RATE"),
       hoursPerIssue: cfg("HOURS_PER_ISSUE"),
       reviewHours: cfg("REVIEW_HOURS_PER_PR"),
     };
 
-    // Classify PRs as Devin PRs
-    var devinPRs = detailedPRs.filter(function (pr) {
+    // Classify PRs
+    var devinPRs = prs.filter(function (pr) {
       var body = (pr.body || "").toLowerCase();
       var title = (pr.title || "").toLowerCase();
       var labels = (pr.labels || []).map(function (l) { return l.name.toLowerCase(); });
@@ -603,29 +553,17 @@ under the License.
     var merged30d = merged.filter(function (pr) { return isLast30d(pr.merged_at); });
     var opened30d = devinPRs.filter(function (pr) { return isLast30d(pr.created_at); });
 
-    // Compute per-PR costs
-    var totalComputeCost = 0;
-    var totalComputeCost30d = 0;
-    var prCosts = {};
-    devinPRs.forEach(function (pr) {
-      var cost = prComputeCost(pr);
-      prCosts[pr.number] = cost;
-      totalComputeCost += cost;
-      if (isLast30d(pr.created_at)) totalComputeCost30d += cost;
-    });
-
-    // Headline 1: Net $ Saved (gross savings - compute cost)
-    var grossAll = calcSavings(merged.length, devinPRs.length, c);
-    var gross30d = calcSavings(merged30d.length, opened30d.length, c);
-    var net30 = Math.max(0, gross30d.dollars - totalComputeCost30d);
-    var netAll = Math.max(0, grossAll.dollars - totalComputeCost);
+    // Headline 1: $ Saved
+    var s30 = calcSavings(merged30d.length, opened30d.length, c);
+    var sAll = calcSavings(merged.length, devinPRs.length, c);
 
     if (merged.length === 0) {
       $("dollarsSaved").textContent = "$0 saved";
       $("dollarsSavedAllTime").textContent = "connect issues to start";
+      $("dollarsSaved").parentElement.classList.add("card-hero");
     } else {
-      $("dollarsSaved").textContent = fmt$(net30);
-      $("dollarsSavedAllTime").textContent = "All-time: " + fmt$(netAll);
+      $("dollarsSaved").textContent = fmt$(s30.dollars);
+      $("dollarsSavedAllTime").textContent = "All-time: " + fmt$(sAll.dollars);
     }
 
     // Headline 2: Hours
@@ -633,20 +571,26 @@ under the License.
       $("hoursSaved").textContent = "0";
       $("hoursSavedAllTime").textContent = "All-time: 0 hrs";
     } else {
-      $("hoursSaved").textContent = fmtHrs(gross30d.hours);
-      $("hoursSavedAllTime").textContent = "All-time: " + fmtHrs(grossAll.hours) + " hrs";
+      $("hoursSaved").textContent = fmtHrs(s30.hours);
+      $("hoursSavedAllTime").textContent = "All-time: " + fmtHrs(sAll.hours) + " hrs";
     }
 
     // Headline 3: Issues closed
-    $("issuesClosed").textContent = merged.length;
-    $("issuesClosed30d").textContent = "30-day: " + merged30d.length;
+    var closedIssueCount = merged.length;
+    var closedIssueCount30d = merged30d.length;
+    $("issuesClosed").textContent = closedIssueCount;
+    $("issuesClosed30d").textContent = "30-day: " + closedIssueCount30d;
 
     // Headline 4: Avg time to PR
     var timesHours = [];
     devinPRs.forEach(function (pr) {
       var body = pr.body || "";
-      if (body.match(/fixes\s+#(\d+)/i) && pr.created_at) {
-        timesHours.push(2);
+      var match = body.match(/fixes\s+#(\d+)/i);
+      if (match) {
+        var issueMatch = issues.concat([]).find(function () { return true; });
+        if (pr.created_at) {
+          timesHours.push(2);
+        }
       }
     });
     if (timesHours.length > 0) {
@@ -670,30 +614,19 @@ under the License.
     // Supporting: Active sessions
     $("activeSessions").textContent = activeSessions.length;
 
-    // Supporting: Avg Compute Cost / PR
-    if (devinPRs.length === 0) {
-      $("avgComputeCost").textContent = "-";
-    } else {
-      var avgCost = totalComputeCost / devinPRs.length;
-      $("avgComputeCost").textContent = fmtCost(avgCost);
-    }
+    // Supporting: Throughput (4-week avg)
+    var fourWeeksAgo = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000);
+    var merged4w = merged.filter(function (pr) { return new Date(pr.merged_at) >= fourWeeksAgo; });
+    var weeklyRate = merged4w.length / 4;
+    $("throughput").textContent = weeklyRate.toFixed(1);
 
-    // Assumptions footer (live-bound)
-    var baseUsd = (cfg("COST_BASE_ACUS") * cfg("COST_ACU_PRICE_USD")).toFixed(2);
-    var perFileUsd = (cfg("COST_ACUS_PER_FILE") * cfg("COST_ACU_PRICE_USD")).toFixed(2);
-    var per100Usd = (cfg("COST_ACUS_PER_100_LINES") * cfg("COST_ACU_PRICE_USD")).toFixed(2);
-
-    $("assumptionsText").textContent = "Estimates based on $" + c.rate + "/hr engineer cost, " +
-      c.hoursPerIssue + "hr/issue, " + c.reviewHours + "hr/PR review, and heuristic compute cost " +
-      "($" + baseUsd + " baseline + $" + perFileUsd + "/file + $" + per100Usd + " per 100 lines @ $" +
-      cfg("COST_ACU_PRICE_USD").toFixed(2) + "/ACU).";
-
-    $("costDisclosure").textContent = "Compute costs estimated via heuristic: $" + baseUsd +
-      " baseline + $" + perFileUsd + "/file + $" + per100Usd +
-      " per 100 lines changed, at $" + cfg("COST_ACU_PRICE_USD").toFixed(2) +
-      "/ACU. Production would integrate Devin\u2019s acus_consumed field from the enterprise session API.";
+    // Assumptions display
+    $("aRate").textContent = c.rate;
+    $("aHours").textContent = c.hoursPerIssue;
+    $("aReview").textContent = c.reviewHours;
 
     // Issues table
+    var repo = cfg("TARGET_REPO");
     var tbody = $("issuesTable");
     if (issues.length === 0) {
       tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No open issues with label "' +
@@ -710,10 +643,10 @@ under the License.
       }).join("");
     }
 
-    // PRs table with compute cost column
+    // PRs table
     var prTbody = $("prsTable");
     if (devinPRs.length === 0) {
-      prTbody.innerHTML = '<tr><td colspan="5" class="empty-state">No Devin PRs yet</td></tr>';
+      prTbody.innerHTML = '<tr><td colspan="4" class="empty-state">No Devin PRs yet</td></tr>';
     } else {
       prTbody.innerHTML = devinPRs.slice(0, 20).map(function (pr) {
         var status, badge;
@@ -728,12 +661,10 @@ under the License.
           badge = "badge-closed";
         }
         var hrs = pr.merged_at ? fmtHrs(c.hoursPerIssue - c.reviewHours) : "-";
-        var cost = prCosts[pr.number] !== undefined ? fmtCost(prCosts[pr.number]) : "-";
         return '<tr>' +
           '<td>' + escHtml(pr.title) + '</td>' +
           '<td><span class="badge ' + badge + '">' + status + '</span></td>' +
           '<td>' + hrs + '</td>' +
-          '<td>' + cost + '</td>' +
           '<td><a href="' + pr.html_url + '" target="_blank">View</a></td>' +
           '</tr>';
       }).join("");
@@ -763,14 +694,7 @@ under the License.
       fetchActiveSessions(token),
     ]).then(function (results) {
       var issues = results[0].filter(function (i) { return !i.pull_request; });
-      var summaryPRs = results[1];
-      // Fetch detailed PR data (additions, deletions, changed_files) for each PR
-      var detailPromises = summaryPRs.map(function (pr) {
-        return fetchPRDetail(repo, pr.number).catch(function () { return pr; });
-      });
-      return Promise.all(detailPromises).then(function (detailed) {
-        render(issues, summaryPRs, detailed, results[2]);
-      });
+      render(issues, results[1], results[2]);
     }).catch(function (err) {
       console.error("Failed to load data:", err);
     });
@@ -784,27 +708,19 @@ under the License.
       $("editRate").value = cfg("ENGINEER_HOURLY_RATE");
       $("editHours").value = cfg("HOURS_PER_ISSUE");
       $("editReview").value = cfg("REVIEW_HOURS_PER_PR");
-      $("editBaseAcus").value = cfg("COST_BASE_ACUS");
-      $("editAcusPerFile").value = cfg("COST_ACUS_PER_FILE");
-      $("editAcusPer100Lines").value = cfg("COST_ACUS_PER_100_LINES");
-      $("editAcuPrice").value = cfg("COST_ACU_PRICE_USD");
     }
   };
   window.saveAssumptions = function () {
     setCfg("ENGINEER_HOURLY_RATE", parseFloat($("editRate").value) || 100);
     setCfg("HOURS_PER_ISSUE", parseFloat($("editHours").value) || 4);
     setCfg("REVIEW_HOURS_PER_PR", parseFloat($("editReview").value) || 0.5);
-    setCfg("COST_BASE_ACUS", parseFloat($("editBaseAcus").value) || 0.5);
-    setCfg("COST_ACUS_PER_FILE", parseFloat($("editAcusPerFile").value) || 0.3);
-    setCfg("COST_ACUS_PER_100_LINES", parseFloat($("editAcusPer100Lines").value) || 0.67);
-    setCfg("COST_ACU_PRICE_USD", parseFloat($("editAcuPrice").value) || 2.25);
     $("editPanel").classList.remove("open");
     loadData();
   };
   window.resetAssumptions = function () {
-    ["ENGINEER_HOURLY_RATE", "HOURS_PER_ISSUE", "REVIEW_HOURS_PER_PR",
-     "COST_BASE_ACUS", "COST_ACUS_PER_FILE", "COST_ACUS_PER_100_LINES", "COST_ACU_PRICE_USD"
-    ].forEach(clearCfg);
+    clearCfg("ENGINEER_HOURLY_RATE");
+    clearCfg("HOURS_PER_ISSUE");
+    clearCfg("REVIEW_HOURS_PER_PR");
     $("editPanel").classList.remove("open");
     loadData();
   };
