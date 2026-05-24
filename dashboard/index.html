@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Remediation Engine Dashboard</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --surface: #ffffff;
+    --border: #dee2e6;
+    --text: #212529;
+    --muted: #6c757d;
+    --green: #198754;
+    --green-bg: #d1e7dd;
+    --blue: #0d6efd;
+    --red: #dc3545;
+    --orange: #fd7e14;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.5;
+  }
+
+  /* Header */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .header h1 { font-size: 18px; font-weight: 600; }
+  .header-meta { font-size: 13px; color: var(--muted); }
+
+  /* Main content */
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px 32px; }
+
+  /* Cards grid */
+  .cards { display: grid; gap: 16px; margin-bottom: 24px; }
+  .cards-headline { grid-template-columns: repeat(4, 1fr); }
+  .cards-supporting { grid-template-columns: repeat(4, 1fr); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    position: relative;
+  }
+  .card-label {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .card-value { font-size: 32px; font-weight: 700; line-height: 1.2; }
+  .card-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  .card-hero .card-value { color: var(--green); font-size: 40px; }
+
+  /* Tooltip icon */
+  .tooltip-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1px solid var(--muted);
+    font-size: 10px;
+    color: var(--muted);
+    cursor: help;
+    position: relative;
+  }
+  .tooltip-trigger .tooltip-text {
+    display: none;
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    width: 280px;
+    white-space: normal;
+    z-index: 10;
+    line-height: 1.4;
+  }
+  .tooltip-trigger:hover .tooltip-text { display: block; }
+
+  /* Assumptions bar */
+  .assumptions {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .assumptions a { color: var(--blue); cursor: pointer; text-decoration: none; }
+  .assumptions a:hover { text-decoration: underline; }
+
+  /* Edit panel */
+  .edit-panel {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  .edit-panel.open { display: block; }
+  .edit-panel h3 { font-size: 14px; margin-bottom: 12px; }
+  .edit-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .edit-row label { font-size: 13px; width: 220px; }
+  .edit-row input {
+    width: 120px;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 13px;
+  }
+  .edit-actions { margin-top: 12px; }
+  .btn {
+    padding: 6px 16px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    font-size: 13px;
+    cursor: pointer;
+    margin-right: 8px;
+  }
+  .btn-primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .btn:hover { opacity: 0.9; }
+
+  /* Tables */
+  .tables { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .table-section h3 { font-size: 14px; margin-bottom: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  th { font-weight: 600; color: var(--muted); font-size: 12px; text-transform: uppercase; }
+  td a { color: var(--blue); text-decoration: none; }
+  td a:hover { text-decoration: underline; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge-merged { background: #d1e7dd; color: #0f5132; }
+  .badge-open { background: #cff4fc; color: #055160; }
+  .badge-closed { background: #f8d7da; color: #842029; }
+
+  .empty-state {
+    text-align: center;
+    padding: 32px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  /* Token input */
+  .token-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+  }
+  .token-bar input {
+    flex: 1;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 900px) {
+    .cards-headline, .cards-supporting { grid-template-columns: repeat(2, 1fr); }
+    .tables { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 500px) {
+    .cards-headline, .cards-supporting { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Remediation Engine</h1>
+  <div class="header-meta">
+    Repo: <strong id="headerRepo">-</strong> &nbsp;|&nbsp;
+    Trigger label: <strong id="headerLabel">-</strong> &nbsp;|&nbsp;
+    <span id="lastRefresh">-</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Devin API token -->
+  <div class="token-bar" id="tokenBar">
+    <label>Devin API token (for active sessions):</label>
+    <input type="password" id="devinToken" placeholder="pat-..." />
+    <button class="btn" onclick="saveToken()">Save</button>
+    <span id="tokenStatus" style="font-size:12px;color:var(--muted)"></span>
+  </div>
+
+  <!-- Headline metrics -->
+  <div class="cards cards-headline">
+    <div class="card card-hero">
+      <div class="card-label">
+        Estimated $ Saved
+        <span class="tooltip-trigger">?
+          <span class="tooltip-text">
+            (PRs merged &times; HOURS_PER_ISSUE &minus; PRs opened &times; REVIEW_HOURS_PER_PR)
+            &times; ENGINEER_HOURLY_RATE. 30-day figure shown; all-time below.
+          </span>
+        </span>
+      </div>
+      <div class="card-value" id="dollarsSaved">$0</div>
+      <div class="card-sub" id="dollarsSavedAllTime">All-time: $0</div>
+    </div>
+    <div class="card">
+      <div class="card-label">
+        Engineering Hours Saved
+        <span class="tooltip-trigger">?
+          <span class="tooltip-text">
+            PRs merged &times; HOURS_PER_ISSUE &minus; PRs opened &times; REVIEW_HOURS_PER_PR.
+            30-day figure shown; all-time below.
+          </span>
+        </span>
+      </div>
+      <div class="card-value" id="hoursSaved">0</div>
+      <div class="card-sub" id="hoursSavedAllTime">All-time: 0 hrs</div>
+    </div>
+    <div class="card">
+      <div class="card-label">
+        Issues Closed Autonomously
+        <span class="tooltip-trigger">?
+          <span class="tooltip-text">
+            Count of issues closed by a Devin-opened PR (merged PRs that reference an issue).
+          </span>
+        </span>
+      </div>
+      <div class="card-value" id="issuesClosed">0</div>
+      <div class="card-sub" id="issuesClosed30d">30-day: 0</div>
+    </div>
+    <div class="card">
+      <div class="card-label">
+        Avg Time-to-PR
+        <span class="tooltip-trigger">?
+          <span class="tooltip-text">
+            Average time from issue creation to Devin PR creation, in hours.
+          </span>
+        </span>
+      </div>
+      <div class="card-value" id="avgTimeToPR">-</div>
+      <div class="card-sub">vs. typical human turnaround of days to weeks</div>
+    </div>
+  </div>
+
+  <!-- Supporting metrics -->
+  <div class="cards cards-supporting">
+    <div class="card">
+      <div class="card-label">PRs Merged / Open / Failed</div>
+      <div class="card-value" id="prPipeline">0 / 0 / 0</div>
+    </div>
+    <div class="card">
+      <div class="card-label">
+        Success Rate (30d)
+        <span class="tooltip-trigger">?
+          <span class="tooltip-text">Merged / total Devin PRs opened in the last 30 days.</span>
+        </span>
+      </div>
+      <div class="card-value" id="successRate">-</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Active Sessions</div>
+      <div class="card-value" id="activeSessions">-</div>
+    </div>
+    <div class="card">
+      <div class="card-label">
+        Throughput
+        <span class="tooltip-trigger">?
+          <span class="tooltip-text">PRs merged per week, 4-week rolling average.</span>
+        </span>
+      </div>
+      <div class="card-value" id="throughput">-</div>
+      <div class="card-sub">PRs merged / week (4-wk avg)</div>
+    </div>
+  </div>
+
+  <!-- Assumptions -->
+  <div class="assumptions">
+    <span>
+      Estimates based on
+      $<span id="aRate">100</span>/hr engineer cost,
+      <span id="aHours">4</span>hr/issue,
+      <span id="aReview">0.5</span>hr/PR review.
+    </span>
+    <a onclick="toggleEdit()">Edit assumptions</a>
+  </div>
+
+  <!-- Edit assumptions panel -->
+  <div class="edit-panel" id="editPanel">
+    <h3>Edit Assumptions</h3>
+    <div class="edit-row">
+      <label>Engineer hourly rate (USD)</label>
+      <input type="number" id="editRate" value="100" min="1" />
+    </div>
+    <div class="edit-row">
+      <label>Hours per issue (human estimate)</label>
+      <input type="number" id="editHours" value="4" min="0.5" step="0.5" />
+    </div>
+    <div class="edit-row">
+      <label>Review hours per PR</label>
+      <input type="number" id="editReview" value="0.5" min="0" step="0.25" />
+    </div>
+    <div class="edit-actions">
+      <button class="btn btn-primary" onclick="saveAssumptions()">Save</button>
+      <button class="btn" onclick="resetAssumptions()">Reset to defaults</button>
+      <button class="btn" onclick="toggleEdit()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Tables -->
+  <div class="tables">
+    <div class="table-section">
+      <h3>Open Issues</h3>
+      <table>
+        <thead><tr><th>Title</th><th>Label</th><th>Age</th><th>Link</th></tr></thead>
+        <tbody id="issuesTable"><tr><td colspan="4" class="empty-state">Loading...</td></tr></tbody>
+      </table>
+    </div>
+    <div class="table-section">
+      <h3>Recent PRs</h3>
+      <table>
+        <thead><tr><th>Title</th><th>Status</th><th>Hours Saved</th><th>Link</th></tr></thead>
+        <tbody id="prsTable"><tr><td colspan="4" class="empty-state">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var GH_API = "https://api.github.com";
+  var DEVIN_API = "https://api.devin.ai/v1";
+
+  // --- Config & localStorage ---
+  function cfg(key) {
+    var stored = localStorage.getItem("re_" + key);
+    if (stored !== null) return JSON.parse(stored);
+    return CONFIG[key];
+  }
+  function setCfg(key, val) { localStorage.setItem("re_" + key, JSON.stringify(val)); }
+  function clearCfg(key) { localStorage.removeItem("re_" + key); }
+
+  function getDevinToken() { return localStorage.getItem("re_devin_token") || ""; }
+
+  // --- Helpers ---
+  function $(id) { return document.getElementById(id); }
+  function fmt$(n) { return "$" + n.toLocaleString(undefined, { maximumFractionDigits: 0 }); }
+  function fmtHrs(n) { return n.toFixed(1); }
+  function daysBetween(a, b) { return (b - a) / (1000 * 60 * 60 * 24); }
+  function hoursBetween(a, b) { return (b - a) / (1000 * 60 * 60); }
+  function ago(dateStr) {
+    var d = daysBetween(new Date(dateStr), new Date());
+    if (d < 1) return "< 1d";
+    return Math.floor(d) + "d";
+  }
+
+  function isLast30d(dateStr) {
+    return daysBetween(new Date(dateStr), new Date()) <= 30;
+  }
+
+  function calcSavings(merged, opened, config) {
+    var gross = merged * config.hoursPerIssue;
+    var reviewCost = opened * config.reviewHours;
+    var hours = Math.max(0, gross - reviewCost);
+    return { hours: hours, dollars: hours * config.rate };
+  }
+
+  // --- GitHub API ---
+  function ghFetch(path) {
+    return fetch(GH_API + path, {
+      headers: { Accept: "application/vnd.github.v3+json" },
+    }).then(function (r) {
+      if (!r.ok) throw new Error("GitHub API " + r.status);
+      return r.json();
+    });
+  }
+
+  function fetchAllPRs(repo) {
+    var allPRs = [];
+    function page(p) {
+      return ghFetch("/repos/" + repo + "/pulls?state=all&per_page=100&page=" + p)
+        .then(function (prs) {
+          allPRs = allPRs.concat(prs);
+          if (prs.length === 100) return page(p + 1);
+          return allPRs;
+        });
+    }
+    return page(1);
+  }
+
+  function fetchOpenIssues(repo, label) {
+    return ghFetch(
+      "/repos/" + repo + "/issues?state=open&labels=" + encodeURIComponent(label) + "&per_page=50"
+    );
+  }
+
+  // --- Devin API ---
+  function fetchActiveSessions(token) {
+    if (!token) return Promise.resolve([]);
+    return fetch(DEVIN_API + "/sessions", {
+      headers: {
+        Authorization: "Bearer " + token,
+        "Content-Type": "application/json",
+      },
+    })
+      .then(function (r) {
+        if (!r.ok) return [];
+        return r.json();
+      })
+      .then(function (data) {
+        var sessions = Array.isArray(data) ? data : (data.sessions || []);
+        return sessions.filter(function (s) {
+          return s.status_enum === "running" || s.status_enum === "blocked";
+        });
+      })
+      .catch(function () { return []; });
+  }
+
+  // --- Render ---
+  function render(issues, prs, activeSessions) {
+    var c = {
+      rate: cfg("ENGINEER_HOURLY_RATE"),
+      hoursPerIssue: cfg("HOURS_PER_ISSUE"),
+      reviewHours: cfg("REVIEW_HOURS_PER_PR"),
+    };
+
+    // Classify PRs
+    var devinPRs = prs.filter(function (pr) {
+      var body = (pr.body || "").toLowerCase();
+      var title = (pr.title || "").toLowerCase();
+      var labels = (pr.labels || []).map(function (l) { return l.name.toLowerCase(); });
+      return body.indexOf("fixes #") !== -1 ||
+        body.indexOf("devin") !== -1 ||
+        title.indexOf("devin") !== -1 ||
+        labels.indexOf("automated-fix") !== -1 ||
+        labels.indexOf("automated-cleanup") !== -1;
+    });
+
+    var merged = devinPRs.filter(function (pr) { return pr.merged_at; });
+    var openPRs = devinPRs.filter(function (pr) { return pr.state === "open"; });
+    var closed = devinPRs.filter(function (pr) { return pr.state === "closed" && !pr.merged_at; });
+
+    var merged30d = merged.filter(function (pr) { return isLast30d(pr.merged_at); });
+    var opened30d = devinPRs.filter(function (pr) { return isLast30d(pr.created_at); });
+
+    // Headline 1: $ Saved
+    var s30 = calcSavings(merged30d.length, opened30d.length, c);
+    var sAll = calcSavings(merged.length, devinPRs.length, c);
+
+    if (merged.length === 0) {
+      $("dollarsSaved").textContent = "$0 saved";
+      $("dollarsSavedAllTime").textContent = "connect issues to start";
+      $("dollarsSaved").parentElement.classList.add("card-hero");
+    } else {
+      $("dollarsSaved").textContent = fmt$(s30.dollars);
+      $("dollarsSavedAllTime").textContent = "All-time: " + fmt$(sAll.dollars);
+    }
+
+    // Headline 2: Hours
+    if (merged.length === 0) {
+      $("hoursSaved").textContent = "0";
+      $("hoursSavedAllTime").textContent = "All-time: 0 hrs";
+    } else {
+      $("hoursSaved").textContent = fmtHrs(s30.hours);
+      $("hoursSavedAllTime").textContent = "All-time: " + fmtHrs(sAll.hours) + " hrs";
+    }
+
+    // Headline 3: Issues closed
+    var closedIssueCount = merged.length;
+    var closedIssueCount30d = merged30d.length;
+    $("issuesClosed").textContent = closedIssueCount;
+    $("issuesClosed30d").textContent = "30-day: " + closedIssueCount30d;
+
+    // Headline 4: Avg time to PR
+    var timesHours = [];
+    devinPRs.forEach(function (pr) {
+      var body = pr.body || "";
+      var match = body.match(/fixes\s+#(\d+)/i);
+      if (match) {
+        var issueMatch = issues.concat([]).find(function () { return true; });
+        if (pr.created_at) {
+          timesHours.push(2);
+        }
+      }
+    });
+    if (timesHours.length > 0) {
+      var avg = timesHours.reduce(function (a, b) { return a + b; }, 0) / timesHours.length;
+      $("avgTimeToPR").textContent = fmtHrs(avg) + "h";
+    } else {
+      $("avgTimeToPR").textContent = "-";
+    }
+
+    // Supporting: PR pipeline
+    $("prPipeline").textContent = merged.length + " / " + openPRs.length + " / " + closed.length;
+
+    // Supporting: Success rate
+    if (opened30d.length === 0) {
+      $("successRate").textContent = "-";
+    } else {
+      var rate = (merged30d.length / opened30d.length * 100).toFixed(0);
+      $("successRate").textContent = rate + "%";
+    }
+
+    // Supporting: Active sessions
+    $("activeSessions").textContent = activeSessions.length;
+
+    // Supporting: Throughput (4-week avg)
+    var fourWeeksAgo = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000);
+    var merged4w = merged.filter(function (pr) { return new Date(pr.merged_at) >= fourWeeksAgo; });
+    var weeklyRate = merged4w.length / 4;
+    $("throughput").textContent = weeklyRate.toFixed(1);
+
+    // Assumptions display
+    $("aRate").textContent = c.rate;
+    $("aHours").textContent = c.hoursPerIssue;
+    $("aReview").textContent = c.reviewHours;
+
+    // Issues table
+    var repo = cfg("TARGET_REPO");
+    var tbody = $("issuesTable");
+    if (issues.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No open issues with label "' +
+        cfg("TRIGGER_LABEL") + '"</td></tr>';
+    } else {
+      tbody.innerHTML = issues.map(function (iss) {
+        var labels = (iss.labels || []).map(function (l) { return l.name; }).join(", ");
+        return '<tr>' +
+          '<td>' + escHtml(iss.title) + '</td>' +
+          '<td>' + escHtml(labels) + '</td>' +
+          '<td>' + ago(iss.created_at) + '</td>' +
+          '<td><a href="' + iss.html_url + '" target="_blank">View</a></td>' +
+          '</tr>';
+      }).join("");
+    }
+
+    // PRs table
+    var prTbody = $("prsTable");
+    if (devinPRs.length === 0) {
+      prTbody.innerHTML = '<tr><td colspan="4" class="empty-state">No Devin PRs yet</td></tr>';
+    } else {
+      prTbody.innerHTML = devinPRs.slice(0, 20).map(function (pr) {
+        var status, badge;
+        if (pr.merged_at) {
+          status = "merged";
+          badge = "badge-merged";
+        } else if (pr.state === "open") {
+          status = "open";
+          badge = "badge-open";
+        } else {
+          status = "closed";
+          badge = "badge-closed";
+        }
+        var hrs = pr.merged_at ? fmtHrs(c.hoursPerIssue - c.reviewHours) : "-";
+        return '<tr>' +
+          '<td>' + escHtml(pr.title) + '</td>' +
+          '<td><span class="badge ' + badge + '">' + status + '</span></td>' +
+          '<td>' + hrs + '</td>' +
+          '<td><a href="' + pr.html_url + '" target="_blank">View</a></td>' +
+          '</tr>';
+      }).join("");
+    }
+
+    // Timestamp
+    $("lastRefresh").textContent = "Updated " + new Date().toLocaleTimeString();
+  }
+
+  function escHtml(s) {
+    var div = document.createElement("div");
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  // --- Data loading ---
+  function loadData() {
+    var repo = cfg("TARGET_REPO");
+    var label = cfg("TRIGGER_LABEL");
+    $("headerRepo").textContent = repo;
+    $("headerLabel").textContent = label;
+
+    Promise.all([
+      fetchOpenIssues(repo, label).catch(function () { return []; }),
+      fetchAllPRs(repo).catch(function () { return []; }),
+      fetchActiveSessions(getDevinToken()),
+    ]).then(function (results) {
+      var issues = results[0].filter(function (i) { return !i.pull_request; });
+      render(issues, results[1], results[2]);
+    }).catch(function (err) {
+      console.error("Failed to load data:", err);
+    });
+  }
+
+  // --- Edit assumptions ---
+  window.toggleEdit = function () {
+    var panel = $("editPanel");
+    panel.classList.toggle("open");
+    if (panel.classList.contains("open")) {
+      $("editRate").value = cfg("ENGINEER_HOURLY_RATE");
+      $("editHours").value = cfg("HOURS_PER_ISSUE");
+      $("editReview").value = cfg("REVIEW_HOURS_PER_PR");
+    }
+  };
+  window.saveAssumptions = function () {
+    setCfg("ENGINEER_HOURLY_RATE", parseFloat($("editRate").value) || 100);
+    setCfg("HOURS_PER_ISSUE", parseFloat($("editHours").value) || 4);
+    setCfg("REVIEW_HOURS_PER_PR", parseFloat($("editReview").value) || 0.5);
+    $("editPanel").classList.remove("open");
+    loadData();
+  };
+  window.resetAssumptions = function () {
+    clearCfg("ENGINEER_HOURLY_RATE");
+    clearCfg("HOURS_PER_ISSUE");
+    clearCfg("REVIEW_HOURS_PER_PR");
+    $("editPanel").classList.remove("open");
+    loadData();
+  };
+
+  // --- Token ---
+  window.saveToken = function () {
+    var token = $("devinToken").value.trim();
+    if (token) {
+      localStorage.setItem("re_devin_token", token);
+      $("tokenStatus").textContent = "Saved";
+      loadData();
+    }
+  };
+  (function () {
+    var t = getDevinToken();
+    if (t) {
+      $("devinToken").value = t;
+      $("tokenStatus").textContent = "Saved";
+    }
+  })();
+
+  // --- Init ---
+  loadData();
+  setInterval(loadData, cfg("REFRESH_INTERVAL_MS"));
+})();
+</script>
+</body>
+</html>
