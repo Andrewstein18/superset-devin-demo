@@ -1,0 +1,7 @@
+# Remediation Engine Configuration
+# Environment variables override these values:
+#   TARGET_REPO   → target_repo
+#   TRIGGER_LABEL → trigger_label
+
+target_repo: "Andrewstein18/superset-devin-demo"
+trigger_label: "devin-fix"

@@ -16,14 +16,14 @@
 # under the License.
 """Spawn a Devin fixer agent for a single GitHub issue.
 
-Triggered by the tech-debt-fixer workflow when an issue with the
-'tech-debt' label is created. Spawns one Devin agent, waits for it
-to finish, then closes the issue.
+Triggered by the tech-debt-fixer workflow when an issue receives the
+trigger label. Spawns one Devin agent, waits for it to finish, then
+closes the issue.
 
 Usage:
     python scripts/tech_debt_scanner/fix_issue.py \
         --issue-number 28 \
-        --issue-title "[Tech Debt] Missing null-check" \
+        --issue-title "Missing null-check in parser" \
         --issue-url "https://github.com/..."
 """
 
@@ -36,6 +36,10 @@ import os
 import sys
 import time
 import urllib.request
+from pathlib import Path
+from typing import Any
+
+import yaml
 
 logging.basicConfig(
     level=logging.INFO,
@@ -44,7 +48,26 @@ logging.basicConfig(
 logger = logging.getLogger("fix_issue")
 
 DEVIN_API = "https://api.devin.ai/v1"
-REPO = "Andrewstein18/superset-devin-demo"
+CONFIG_PATH = Path(__file__).resolve().parent.parent.parent / "config.yaml"
+
+
+def load_config() -> dict[str, Any]:
+    """Load configuration from config.yaml, with env-var overrides."""
+    defaults: dict[str, Any] = {
+        "target_repo": "Andrewstein18/superset-devin-demo",
+        "trigger_label": "devin-fix",
+    }
+    if CONFIG_PATH.exists():
+        with open(CONFIG_PATH, encoding="utf-8") as fh:
+            file_cfg = yaml.safe_load(fh) or {}
+            defaults.update(file_cfg)
+
+    defaults["target_repo"] = os.environ.get("TARGET_REPO", defaults["target_repo"])
+    defaults["trigger_label"] = os.environ.get(
+        "TRIGGER_LABEL", defaults["trigger_label"]
+    )
+    return defaults
+
 
 FIXER_PROMPT = """You are a fixer agent for the {repo} repository.
 
@@ -59,7 +82,7 @@ Title: {issue_title}
 4. Implement the fix on a new branch
 5. Open a PR that fixes this issue
    - Reference the issue: "Fixes #{issue_number}"
-   - Labels: tech-debt, automated-cleanup
+   - Labels: automated-fix
 6. Keep the fix focused and minimal
 """
 
@@ -78,7 +101,7 @@ def create_session(prompt: str, title: str, token: str) -> str | None:
             "prompt": prompt,
             "title": title,
             "idempotent": True,
-            "tags": ["tech-debt-scanner", "fixer", "auto-triggered"],
+            "tags": ["remediation-engine", "fixer", "auto-triggered"],
         }
     ).encode()
     req = urllib.request.Request(  # noqa: S310
@@ -117,7 +140,7 @@ def wait_for_session(session_id: str, token: str, timeout: int = 1800) -> str:
     return "timeout"
 
 
-def close_issue(issue_number: int, token: str) -> None:
+def close_issue(issue_number: int, repo: str) -> None:
     """Close the GitHub issue after the fixer agent is done."""
     gh_token = os.environ.get("GITHUB_TOKEN", "")
     if not gh_token:
@@ -126,7 +149,7 @@ def close_issue(issue_number: int, token: str) -> None:
 
     payload = json.dumps({"state": "closed"}).encode()
     req = urllib.request.Request(  # noqa: S310
-        f"https://api.github.com/repos/{REPO}/issues/{issue_number}",
+        f"https://api.github.com/repos/{repo}/issues/{issue_number}",
         data=payload,
         headers={
             "Authorization": f"Bearer {gh_token}",
@@ -143,7 +166,7 @@ def close_issue(issue_number: int, token: str) -> None:
         logger.error("Failed to close issue #%d: %s", issue_number, exc)
 
 
-def add_comment(issue_number: int, session_id: str) -> None:
+def add_comment(issue_number: int, session_id: str, repo: str) -> None:
     """Add a comment linking to the Devin session."""
     gh_token = os.environ.get("GITHUB_TOKEN", "")
     if not gh_token:
@@ -151,13 +174,13 @@ def add_comment(issue_number: int, session_id: str) -> None:
 
     session_url = f"https://app.devin.ai/sessions/{session_id}"
     body = (
-        f"🤖 **Devin fixer agent spawned automatically.**\n\n"
+        f"**Devin fixer agent spawned automatically.**\n\n"
         f"Session: {session_url}\n\n"
         f"A fix PR will be created shortly."
     )
     payload = json.dumps({"body": body}).encode()
     req = urllib.request.Request(  # noqa: S310
-        f"https://api.github.com/repos/{REPO}/issues/{issue_number}/comments",
+        f"https://api.github.com/repos/{repo}/issues/{issue_number}/comments",
         data=payload,
         headers={
             "Authorization": f"Bearer {gh_token}",
@@ -175,7 +198,9 @@ def add_comment(issue_number: int, session_id: str) -> None:
 
 def main() -> None:
     """Entry point."""
-    parser = argparse.ArgumentParser(description="Spawn a Devin fixer for an issue")
+    parser = argparse.ArgumentParser(
+        description="Spawn a Devin fixer agent for a GitHub issue"
+    )
     parser.add_argument("--issue-number", type=int, required=True)
     parser.add_argument("--issue-title", type=str, required=True)
     parser.add_argument("--issue-url", type=str, required=True)
@@ -186,10 +211,13 @@ def main() -> None:
         logger.error("DEVIN_API_TOKEN not set")
         sys.exit(1)
 
+    cfg = load_config()
+    repo = cfg["target_repo"]
+
     logger.info("Spawning fixer for issue #%d: %s", args.issue_number, args.issue_title)
 
     prompt = FIXER_PROMPT.format(
-        repo=REPO,
+        repo=repo,
         issue_url=args.issue_url,
         issue_title=args.issue_title,
         issue_number=args.issue_number,
@@ -202,13 +230,13 @@ def main() -> None:
         sys.exit(1)
 
     logger.info("Fixer session created: %s", session_id)
-    add_comment(args.issue_number, session_id)
+    add_comment(args.issue_number, session_id, repo)
 
     status = wait_for_session(session_id, token)
     logger.info("Fixer finished with status: %s", status)
 
     if status in ("stopped", "finished"):
-        close_issue(args.issue_number, token)
+        close_issue(args.issue_number, repo)
         logger.info("Issue #%d closed", args.issue_number)
     else:
         logger.warning(
