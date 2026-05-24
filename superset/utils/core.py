@@ -2045,7 +2045,7 @@ def parse_boolean_string(bool_str: str | None) -> bool:
     """
     if bool_str is None:
         return False
-    return bool_str.lower() in ("y", "Y", "yes", "True", "t", "true", "On", "on", "1")
+    return bool_str.lower() in ("y", "yes", "true", "t", "on", "1")
 
 
 def apply_max_row_limit(
