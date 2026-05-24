@@ -21,6 +21,7 @@ import rison from 'rison';
 import { Dataset } from '@superset-ui/chart-controls';
 import { t } from '@apache-superset/core/translation';
 import { SupersetClient, QueryFormData } from '@superset-ui/core';
+import { logging } from '@apache-superset/core/utils';
 import { Dispatch } from 'redux';
 import {
   addDangerToast,
@@ -67,9 +68,20 @@ export function fetchFaveStar(sliceId: string) {
   return function (dispatch: Dispatch) {
     SupersetClient.get({
       endpoint: `/api/v1/chart/favorite_status/?q=${rison.encode([sliceId])}`,
-    }).then(({ json }) => {
-      dispatch(toggleFaveStar(!!json?.result?.[0]?.value));
-    });
+    })
+      .then(({ json }) => {
+        dispatch(toggleFaveStar(!!json?.result?.[0]?.value));
+      })
+      .catch((error: Response) => {
+        logging.error('Failed to fetch favorite star status:', error);
+        dispatch(
+          addDangerToast(
+            t(
+              'There was an issue fetching the favorite status of this chart.',
+            ),
+          ),
+        );
+      });
   };
 }
 
