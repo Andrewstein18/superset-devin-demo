@@ -200,19 +200,60 @@ def wait_for_session(
     return {}
 
 
-def run_pipeline(dry_run: bool = False) -> None:
-    """Run the full pipeline."""
-    token = os.environ.get("DEVIN_API_TOKEN", "")
-    if not token:
-        logger.error("DEVIN_API_TOKEN not set — cannot run pipeline")
-        sys.exit(1)
+def _fetch_github_issues(
+    since: str,
+    gh_token: str = "",
+) -> list[dict[str, Any]]:
+    """Fetch tech-debt issues created since *since* (ISO timestamp)."""
+    gh_token = gh_token or os.environ.get("GITHUB_TOKEN", "")
+    headers: dict[str, str] = {"Accept": "application/vnd.github+json"}
+    if gh_token:
+        headers["Authorization"] = f"Bearer {gh_token}"
 
+    url = (
+        f"https://api.github.com/repos/{REPO}/issues"
+        f"?labels=tech-debt&state=all&since={since}&per_page=100"
+    )
+    req = urllib.request.Request(url, headers=headers)  # noqa: S310
+    try:
+        with urllib.request.urlopen(req) as resp:  # noqa: S310
+            raw = json.loads(resp.read().decode())
+    except urllib.error.HTTPError as exc:
+        logger.warning("Failed to fetch issues from GitHub: %s", exc)
+        return []
+
+    results: list[dict[str, Any]] = []
+    for item in raw:
+        if item.get("pull_request"):
+            continue
+        label_names = [lb["name"] for lb in item.get("labels", [])]
+        severity = "medium"
+        for sev in ("critical", "high", "medium", "low"):
+            if f"severity:{sev}" in label_names:
+                severity = sev
+                break
+        category = "unknown"
+        for cat in ("security", "type-safety", "dead-code"):
+            if cat in label_names:
+                category = cat
+                break
+        results.append(
+            {
+                "number": item["number"],
+                "url": item["html_url"],
+                "title": item["title"],
+                "severity": severity,
+                "category": category,
+            }
+        )
+    return results
+
+
+def _run_scanners(
+    token: str,
+) -> tuple[int, list[dict[str, Any]], list[dict[str, Any]]]:
+    """Spawn scanner agents and wait for them to finish."""
     agents_spawned = 0
-    scanner_results: list[dict[str, Any]] = []
-    fixer_prs: list[dict[str, Any]] = []
-
-    # --- Stage 1: Scanner agents (one per directory) ---
-    logger.info("=== Stage 1: Spawning scanner agents ===")
     scanner_sessions: list[tuple[str, str]] = []
 
     for directory in SCAN_DIRS:
@@ -235,9 +276,9 @@ def run_pipeline(dry_run: bool = False) -> None:
         logger.error("No scanner sessions created — aborting")
         sys.exit(1)
 
-    # Wait for all scanners
     logger.info("Waiting for %d scanner agents...", len(scanner_sessions))
     all_issues: list[dict[str, Any]] = []
+    scanner_results: list[dict[str, Any]] = []
 
     for sid, directory in scanner_sessions:
         result = wait_for_session(sid, token)
@@ -261,7 +302,31 @@ def run_pipeline(dry_run: bool = False) -> None:
             len(issues),
         )
 
-    logger.info("Total issues from scanners: %d", len(all_issues))
+    return agents_spawned, all_issues, scanner_results
+
+
+def run_pipeline(dry_run: bool = False) -> None:
+    """Run the full pipeline."""
+    token = os.environ.get("DEVIN_API_TOKEN", "")
+    if not token:
+        logger.error("DEVIN_API_TOKEN not set — cannot run pipeline")
+        sys.exit(1)
+
+    gh_token = os.environ.get("GITHUB_TOKEN", "")
+    run_start = datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    fixer_prs: list[dict[str, Any]] = []
+
+    # --- Stage 1: Scanner agents (one per directory) ---
+    logger.info("=== Stage 1: Spawning scanner agents ===")
+    agents_spawned, all_issues, scanner_results = _run_scanners(token)
+
+    logger.info("Total issues from structured output: %d", len(all_issues))
+
+    # Fallback: fetch newly created issues from GitHub API
+    if not all_issues:
+        logger.info("Structured output empty — fetching issues from GitHub API")
+        all_issues = _fetch_github_issues(since=run_start, gh_token=gh_token)
+        logger.info("Fetched %d issues from GitHub API", len(all_issues))
 
     if dry_run:
         logger.info("Dry run — skipping fixer agents")
