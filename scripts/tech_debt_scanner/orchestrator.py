@@ -16,10 +16,12 @@
 # under the License.
 """Simplified tech debt scanner orchestrator.
 
-Two-stage pipeline that runs fully autonomously:
-  Stage 1: Scanner agents (1 per directory) — read code, create .md docs,
-           add comments, file GitHub issues, open a docs/comments PR.
-  Stage 2: Fixer agents (1 per issue) — fix the issue, open a PR.
+Spawns scanner agents (one per directory) that read code, create .md docs,
+add comments, file GitHub issues, and open a docs/comments PR.
+
+Fixer agents are handled separately by the event-driven
+tech-debt-fixer.yml workflow, which triggers when an issue with the
+'tech-debt' label is created. This avoids duplicate fixer sessions.
 
 Usage:
     python -m scripts.tech_debt_scanner.orchestrator
@@ -105,26 +107,6 @@ Write a summary of what you did to /home/ubuntu/scanner_summary.json:
   "comments_added": 12,
   "docstrings_added": 8
 }}
-"""
-
-FIXER_PROMPT = """You are a fixer agent for the {repo} repository.
-
-## Issue to fix
-{issue_url}
-Title: {issue_title}
-Severity: {severity}
-Category: {category}
-
-## Instructions
-1. Clone the repo: git clone https://github.com/{repo}.git
-2. Read the issue and understand the problem fully
-3. Read the actual source code to understand the context — trace call chains
-4. Implement the fix on a new branch
-5. Open a PR that fixes this issue
-   - Use "Fixes #{issue_number}" in the PR body so GitHub auto-closes the issue
-   - Labels: tech-debt, automated-cleanup
-   - Include severity ({severity}) and category ({category}) in the PR description
-6. Keep the fix focused and minimal
 """
 
 
@@ -330,54 +312,10 @@ def run_pipeline(dry_run: bool = False) -> None:
 
     if dry_run:
         logger.info("Dry run — skipping fixer agents")
-        _save_results(agents_spawned, all_issues, scanner_results, fixer_prs)
-        return
 
-    # --- Stage 2: Fixer agents (one per issue) ---
-    if not all_issues:
-        logger.info("No issues to fix — done")
-        _save_results(agents_spawned, all_issues, scanner_results, fixer_prs)
-        return
-
-    logger.info("=== Stage 2: Spawning fixer agents ===")
-    severity_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
-    sorted_issues = sorted(
-        all_issues,
-        key=lambda i: severity_order.get(i.get("severity", "low"), 3),
-    )
-    for issue in sorted_issues:
-        prompt = FIXER_PROMPT.format(
-            repo=REPO,
-            issue_url=issue.get("url", ""),
-            issue_title=issue.get("title", ""),
-            severity=issue.get("severity", "medium"),
-            category=issue.get("category", "unknown"),
-            issue_number=issue.get("number", ""),
-        )
-        title = f"Fixer: {issue.get('title', 'unknown')[:60]}"
-        sid = create_session(
-            prompt,
-            title,
-            token,
-            tags=["tech-debt-scanner", "fixer"],
-        )
-        if sid:
-            agents_spawned += 1
-            logger.info("Created fixer for issue #%s", issue.get("number"))
-            fixer_result = wait_for_session(sid, token)
-            fixer_prs.append(
-                {
-                    "issue_number": issue.get("number"),
-                    "issue_title": issue.get("title", ""),
-                    "session_id": sid,
-                    "status": fixer_result.get("status_enum", "unknown"),
-                }
-            )
-        else:
-            logger.error(
-                "Failed to create fixer for issue #%s",
-                issue.get("number"),
-            )
+    # Fixer agents are spawned by the event-driven tech-debt-fixer.yml
+    # workflow when issues are created with the 'tech-debt' label.
+    # No need to spawn them here — that would cause duplicates.
 
     logger.info("=== Pipeline Complete ===")
     _save_results(agents_spawned, all_issues, scanner_results, fixer_prs)
