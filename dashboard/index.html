@@ -200,25 +200,6 @@ under the License.
     font-size: 14px;
   }
 
-  /* Token input */
-  .token-bar {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px 20px;
-    margin-bottom: 24px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 13px;
-  }
-  .token-bar input {
-    flex: 1;
-    padding: 4px 8px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    font-size: 13px;
-  }
 
   @media (max-width: 900px) {
     .cards-headline, .cards-supporting { grid-template-columns: repeat(2, 1fr); }
@@ -242,13 +223,6 @@ under the License.
 
 <div class="container">
 
-  <!-- Devin API token -->
-  <div class="token-bar" id="tokenBar">
-    <label>Devin API token (for active sessions):</label>
-    <input type="password" id="devinToken" placeholder="pat-..." />
-    <button class="btn" onclick="saveToken()">Save</button>
-    <span id="tokenStatus" style="font-size:12px;color:var(--muted)"></span>
-  </div>
 
   <!-- Headline metrics -->
   <div class="cards cards-headline">
@@ -404,7 +378,7 @@ under the License.
   function setCfg(key, val) { localStorage.setItem("re_" + key, JSON.stringify(val)); }
   function clearCfg(key) { localStorage.removeItem("re_" + key); }
 
-  function getDevinToken() { return localStorage.getItem("re_devin_token") || ""; }
+  function getDevinToken() { return cfg("DEVIN_API_TOKEN") || ""; }
 
   // --- Helpers ---
   function $(id) { return document.getElementById(id); }
@@ -678,22 +652,6 @@ under the License.
     loadData();
   };
 
-  // --- Token ---
-  window.saveToken = function () {
-    var token = $("devinToken").value.trim();
-    if (token) {
-      localStorage.setItem("re_devin_token", token);
-      $("tokenStatus").textContent = "Saved";
-      loadData();
-    }
-  };
-  (function () {
-    var t = getDevinToken();
-    if (t) {
-      $("devinToken").value = t;
-      $("tokenStatus").textContent = "Saved";
-    }
-  })();
 
   // --- Init ---
   loadData();

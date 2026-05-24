@@ -27,4 +27,7 @@ var CONFIG = {
   HOURS_PER_ISSUE: 4,
   REVIEW_HOURS_PER_PR: 0.5,
   REFRESH_INTERVAL_MS: 60000,
+  // Devin API token for active-sessions count.
+  // Set this once and the dashboard just works — no UI input needed.
+  DEVIN_API_TOKEN: "",
 };
