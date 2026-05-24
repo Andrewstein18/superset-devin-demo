@@ -411,8 +411,8 @@ under the License.
   function clearCfg(key) { localStorage.removeItem("re_" + key); }
 
   // --- Token resolution (3-tier) ---
-  function resolveToken() {
-    if (typeof window.DEVIN_TOKEN === "string" && window.DEVIN_TOKEN && window.DEVIN_TOKEN !== "your-token-here") {
+  function resolveDevinToken() {
+    if (typeof window.DEVIN_TOKEN === "string" && window.DEVIN_TOKEN && window.DEVIN_TOKEN !== "your-devin-token-here") {
       return { token: window.DEVIN_TOKEN, source: "secrets" };
     }
     var ls = localStorage.getItem("devinToken");
@@ -420,8 +420,15 @@ under the License.
     return { token: "", source: "none" };
   }
 
+  function resolveGitHubToken() {
+    if (typeof window.GITHUB_TOKEN === "string" && window.GITHUB_TOKEN && window.GITHUB_TOKEN !== "your-github-token-here") {
+      return window.GITHUB_TOKEN;
+    }
+    return localStorage.getItem("githubToken") || "";
+  }
+
   function initTokenUI() {
-    var resolved = resolveToken();
+    var resolved = resolveDevinToken();
     if (resolved.token) {
       $("tokenLoaded").style.display = "";
       $("tokenInputWrap").style.display = "none";
@@ -480,9 +487,10 @@ under the License.
 
   // --- GitHub API ---
   function ghFetch(path) {
-    return fetch(GH_API + path, {
-      headers: { Accept: "application/vnd.github.v3+json" },
-    }).then(function (r) {
+    var headers = { Accept: "application/vnd.github.v3+json" };
+    var ghToken = resolveGitHubToken();
+    if (ghToken) headers.Authorization = "Bearer " + ghToken;
+    return fetch(GH_API + path, { headers: headers }).then(function (r) {
       if (!r.ok) throw new Error("GitHub API " + r.status);
       return r.json();
     });
@@ -686,7 +694,7 @@ under the License.
     var label = cfg("TRIGGER_LABEL");
     $("headerRepo").textContent = repo;
     $("headerLabel").textContent = label;
-    var token = resolveToken().token;
+    var token = resolveDevinToken().token;
 
     Promise.all([
       fetchOpenIssues(repo, label).catch(function () { return []; }),

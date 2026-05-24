@@ -156,11 +156,15 @@ For a fully automatic load (no manual token entry at all):
 
 ```bash
 cp dashboard/secrets.js.example dashboard/secrets.js
-# Edit dashboard/secrets.js and paste your Devin API token
+# Edit dashboard/secrets.js and paste your tokens
 ```
 
-`secrets.js` is gitignored and will never be committed. When present,
-the dashboard loads the token automatically and hides the input field.
+`secrets.js` is gitignored and will never be committed. It supports two tokens:
+
+- **`GITHUB_TOKEN`** — raises the GitHub API rate limit from 60 to 5,000
+  requests/hour. Create one at https://github.com/settings/tokens (no
+  scopes needed for public repos).
+- **`DEVIN_TOKEN`** — enables the "Active Sessions" card.
 
 ## Project Structure
 
