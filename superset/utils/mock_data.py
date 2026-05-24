@@ -14,6 +14,8 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+from __future__ import annotations
+
 import decimal
 import logging
 import os
@@ -22,7 +24,7 @@ import string
 import sys
 from collections.abc import Iterator
 from datetime import date, datetime, time, timedelta
-from typing import Any, Callable, cast, Optional, TypedDict
+from typing import Any, Callable, cast, TypedDict
 from uuid import uuid4
 
 import sqlalchemy.sql.sqltypes
@@ -44,7 +46,7 @@ class ColumnInfo(TypedDict):
     name: str
     type: VisitableType
     nullable: bool
-    default: Optional[Any]
+    default: Any | None
     autoincrement: str
     primary_key: int
 
@@ -122,8 +124,11 @@ def get_type_generator(  # pylint: disable=too-many-return-statements,too-many-b
             sqlalchemy.sql.sqltypes.DateTime,
         ),
     ):
-        return lambda: datetime.fromordinal(MINIMUM_DATE.toordinal()) + timedelta(
-            seconds=random.randrange(days_range * 86400)  # noqa: S311
+        return lambda: (
+            datetime.fromordinal(MINIMUM_DATE.toordinal())
+            + timedelta(
+                seconds=random.randrange(days_range * 86400)  # noqa: S311
+            )
         )
 
     if isinstance(sqltype, sqlalchemy.sql.sqltypes.Numeric):
@@ -164,7 +169,7 @@ def get_type_generator(  # pylint: disable=too-many-return-statements,too-many-b
 
 
 def add_data(
-    columns: Optional[list[ColumnInfo]],
+    columns: list[ColumnInfo] | None,
     num_rows: int,
     table_name: str,
     append: bool = True,
@@ -247,7 +252,7 @@ def add_sample_rows(model: type[Model], count: int) -> Iterator[Model]:
     relationships = inspector.relationships.items()
     samples = db.session.query(model).limit(count).all() if relationships else []
 
-    max_primary_key: Optional[int] = None
+    max_primary_key: int | None = None
     for i in range(count):
         sample = samples[i % len(samples)] if samples else None
         kwargs = {}
