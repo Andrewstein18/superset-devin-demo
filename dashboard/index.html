@@ -34,6 +34,8 @@ under the License.
     --blue: #0d6efd;
     --red: #dc3545;
     --orange: #fd7e14;
+    --amber: #ffc107;
+    --purple: #6f42c1;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -173,6 +175,72 @@ under the License.
   .btn-primary { background: var(--blue); color: #fff; border-color: var(--blue); }
   .btn:hover { opacity: 0.9; }
 
+  /* Active sessions panel */
+  .sessions-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  .sessions-panel h3 { font-size: 14px; margin-bottom: 12px; }
+  .sessions-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .sessions-table th, .sessions-table td {
+    text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border);
+  }
+  .sessions-table th {
+    font-weight: 600; color: var(--muted); font-size: 12px; text-transform: uppercase;
+  }
+  .sessions-table td a { color: var(--blue); text-decoration: none; }
+  .sessions-table td a:hover { text-decoration: underline; }
+
+  .status-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .status-dot-running { background: var(--blue); }
+  .status-dot-blocked { background: var(--amber); }
+  .status-dot-waiting { background: var(--amber); }
+  .status-dot-completed { background: var(--green); }
+  .status-dot-failed { background: var(--red); }
+  .status-dot-working { background: var(--blue); }
+
+  /* Filter pills */
+  .filter-pills {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .pill {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+  .pill:hover { border-color: var(--blue); color: var(--blue); }
+  .pill.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+  /* State dots for issues */
+  .state-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .state-dot-open { background: var(--green); }
+  .state-dot-closed { background: var(--purple); }
+
   /* Tables */
   .tables { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
   .table-section h3 { font-size: 14px; margin-bottom: 8px; }
@@ -190,8 +258,8 @@ under the License.
     font-weight: 600;
   }
   .badge-merged { background: #d1e7dd; color: #0f5132; }
-  .badge-open { background: #cff4fc; color: #055160; }
-  .badge-closed { background: #f8d7da; color: #842029; }
+  .badge-open { background: #fff3cd; color: #664d03; }
+  .badge-closed { background: #e2e3e5; color: #41464b; }
 
   .empty-state {
     text-align: center;
@@ -199,6 +267,14 @@ under the License.
     color: var(--muted);
     font-size: 14px;
   }
+
+  .show-all-link {
+    text-align: center;
+    padding: 8px;
+    font-size: 13px;
+  }
+  .show-all-link a { color: var(--blue); text-decoration: none; }
+  .show-all-link a:hover { text-decoration: underline; }
 
   /* Token bar */
   .token-bar {
@@ -373,21 +449,41 @@ under the License.
     </div>
   </div>
 
+  <!-- Active Devin Sessions -->
+  <div class="sessions-panel" id="sessionsPanel">
+    <h3>Active Devin Sessions</h3>
+    <div id="sessionsContent"><span class="empty-state" style="padding:16px">Loading...</span></div>
+  </div>
+
   <!-- Tables -->
   <div class="tables">
     <div class="table-section">
-      <h3>Open Issues</h3>
+      <h3>Issues</h3>
+      <div class="filter-pills" id="issueFilters">
+        <span class="pill active" data-filter="open" onclick="setIssueFilter('open')">Open</span>
+        <span class="pill" data-filter="in-progress" onclick="setIssueFilter('in-progress')">In Progress</span>
+        <span class="pill" data-filter="closed" onclick="setIssueFilter('closed')">Closed</span>
+        <span class="pill" data-filter="all" onclick="setIssueFilter('all')">All</span>
+      </div>
       <table>
-        <thead><tr><th>Title</th><th>Label</th><th>Age</th><th>Link</th></tr></thead>
+        <thead><tr><th>Title</th><th>PR</th><th>Age</th><th>Link</th></tr></thead>
         <tbody id="issuesTable"><tr><td colspan="4" class="empty-state">Loading...</td></tr></tbody>
       </table>
+      <div class="show-all-link" id="issuesShowAll" style="display:none"></div>
     </div>
     <div class="table-section">
-      <h3>Recent PRs</h3>
+      <h3>Pull Requests</h3>
+      <div class="filter-pills" id="prFilters">
+        <span class="pill active" data-filter="all" onclick="setPrFilter('all')">All</span>
+        <span class="pill" data-filter="open" onclick="setPrFilter('open')">Open</span>
+        <span class="pill" data-filter="merged" onclick="setPrFilter('merged')">Merged</span>
+        <span class="pill" data-filter="closed" onclick="setPrFilter('closed')">Closed without merge</span>
+      </div>
       <table>
-        <thead><tr><th>Title</th><th>Status</th><th>Hours Saved</th><th>Link</th></tr></thead>
-        <tbody id="prsTable"><tr><td colspan="4" class="empty-state">Loading...</td></tr></tbody>
+        <thead><tr><th>Title</th><th>Status</th><th>Issue</th><th>Hours Saved</th><th>Link</th></tr></thead>
+        <tbody id="prsTable"><tr><td colspan="5" class="empty-state">Loading...</td></tr></tbody>
       </table>
+      <div class="show-all-link" id="prsShowAll" style="display:none"></div>
     </div>
   </div>
 </div>
@@ -400,6 +496,15 @@ under the License.
 
   var GH_API = "https://api.github.com";
   var DEVIN_API = "https://api.devin.ai/v1";
+  var DEVIN_UI = "https://app.devin.ai/sessions/";
+  var MAX_TABLE_ROWS = 25;
+
+  var currentIssueFilter = "open";
+  var currentPrFilter = "all";
+  var cachedIssues = [];
+  var cachedPrs = [];
+  var cachedSessions = [];
+  var linkMap = {};
 
   // --- Config & localStorage ---
   function cfg(key) {
@@ -467,11 +572,22 @@ under the License.
   function fmt$(n) { return "$" + n.toLocaleString(undefined, { maximumFractionDigits: 0 }); }
   function fmtHrs(n) { return n.toFixed(1); }
   function daysBetween(a, b) { return (b - a) / (1000 * 60 * 60 * 24); }
-  function hoursBetween(a, b) { return (b - a) / (1000 * 60 * 60); }
+
   function ago(dateStr) {
     var d = daysBetween(new Date(dateStr), new Date());
     if (d < 1) return "< 1d";
     return Math.floor(d) + "d";
+  }
+
+  function relativeTime(dateStr) {
+    var ms = Date.now() - new Date(dateStr).getTime();
+    var sec = Math.floor(ms / 1000);
+    if (sec < 60) return sec + "s ago";
+    var min = Math.floor(sec / 60);
+    if (min < 60) return min + " min ago";
+    var hr = Math.floor(min / 60);
+    if (hr < 24) return hr + "h ago";
+    return Math.floor(hr / 24) + "d ago";
   }
 
   function isLast30d(dateStr) {
@@ -483,6 +599,33 @@ under the License.
     var reviewCost = opened * config.reviewHours;
     var hours = Math.max(0, gross - reviewCost);
     return { hours: hours, dollars: hours * config.rate };
+  }
+
+  function escHtml(s) {
+    var div = document.createElement("div");
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  // --- Issue <-> PR linking ---
+  function parseLinkedIssueNum(prBody) {
+    if (!prBody) return null;
+    var m = prBody.match(/(?:fixes|closes|resolves)\s+#(\d+)/i);
+    return m ? parseInt(m[1], 10) : null;
+  }
+
+  function buildLinkMap(allIssues, allPrs) {
+    var map = { issueTopr: {}, prToIssue: {} };
+    allPrs.forEach(function (pr) {
+      var issueNum = parseLinkedIssueNum(pr.body);
+      if (issueNum) {
+        map.prToIssue[pr.number] = issueNum;
+        if (!map.issueTopr[issueNum]) {
+          map.issueTopr[issueNum] = pr;
+        }
+      }
+    });
+    return map;
   }
 
   // --- GitHub API ---
@@ -509,16 +652,31 @@ under the License.
     return page(1);
   }
 
-  function fetchOpenIssues(repo, label) {
-    return ghFetch(
-      "/repos/" + repo + "/issues?state=open&labels=" + encodeURIComponent(label) + "&per_page=50"
-    );
+  function fetchAllIssues(repo, label) {
+    var allIssues = [];
+    function page(p) {
+      return ghFetch(
+        "/repos/" + repo + "/issues?state=all&labels=" + encodeURIComponent(label) + "&per_page=100&page=" + p
+      ).then(function (issues) {
+        allIssues = allIssues.concat(issues);
+        if (issues.length === 100) return page(p + 1);
+        return allIssues;
+      });
+    }
+    return page(1);
   }
 
   // --- Devin API ---
-  function fetchActiveSessions(token) {
+  function devinFetchUrl() {
+    var useProxy = location.protocol !== "file:" && location.hostname === "localhost";
+    return useProxy
+      ? location.origin + "/proxy/devin/sessions"
+      : DEVIN_API + "/sessions";
+  }
+
+  function fetchDevinSessions(token) {
     if (!token) return Promise.resolve([]);
-    return fetch(DEVIN_API + "/sessions", {
+    return fetch(devinFetchUrl(), {
       headers: { Authorization: "Bearer " + token },
     })
       .then(function (r) {
@@ -526,23 +684,240 @@ under the License.
         return r.json();
       })
       .then(function (data) {
-        var sessions = Array.isArray(data) ? data : (data.sessions || []);
-        return sessions.filter(function (s) {
-          return s.status_enum === "running" || s.status_enum === "blocked";
-        });
+        return Array.isArray(data) ? data : (data.sessions || []);
       })
       .catch(function () { return []; });
   }
 
-  // --- Render ---
-  function render(issues, prs, activeSessions) {
+  function getActiveSessions(sessions) {
+    return sessions.filter(function (s) {
+      return s.status_enum === "running" || s.status_enum === "blocked" || s.status_enum === "working";
+    });
+  }
+
+  // --- Filter handlers ---
+  window.setIssueFilter = function (filter) {
+    currentIssueFilter = filter;
+    var pills = $("issueFilters").querySelectorAll(".pill");
+    pills.forEach(function (p) {
+      p.classList.toggle("active", p.getAttribute("data-filter") === filter);
+    });
+    renderIssuesTable();
+  };
+
+  window.setPrFilter = function (filter) {
+    currentPrFilter = filter;
+    var pills = $("prFilters").querySelectorAll(".pill");
+    pills.forEach(function (p) {
+      p.classList.toggle("active", p.getAttribute("data-filter") === filter);
+    });
+    renderPrsTable();
+  };
+
+  // --- Render: Active sessions panel ---
+  function renderSessionsPanel(sessions) {
+    var active = getActiveSessions(sessions);
+    var container = $("sessionsContent");
+
+    if (active.length === 0) {
+      container.innerHTML = '<div class="empty-state" style="padding:16px">' +
+        'No active sessions &mdash; trigger one by labeling an issue with <strong>' +
+        escHtml(cfg("TRIGGER_LABEL")) + '</strong>.</div>';
+      return;
+    }
+
+    var html = '<table class="sessions-table"><thead><tr>' +
+      '<th>Session</th><th>Linked Issue</th><th>Status</th><th>Started</th><th>Action</th>' +
+      '</tr></thead><tbody>';
+
+    active.forEach(function (s) {
+      var sid = s.session_id || "";
+      var shortId = sid.length > 12 ? sid.substring(0, 12) + "..." : sid;
+      var title = s.title || "";
+      var linkedIssue = "&mdash;";
+      var issueMatch = title.match(/(?:Fixer:\s*)?(?:\[.*?\]\s*)?(.+)/);
+      if (issueMatch) {
+        var issueTitle = issueMatch[1].trim();
+        cachedIssues.forEach(function (iss) {
+          if (iss.title === issueTitle || title.indexOf(iss.title) !== -1) {
+            linkedIssue = '<a href="' + iss.html_url + '" target="_blank">#' +
+              iss.number + '</a> ' + escHtml(iss.title.substring(0, 50));
+          }
+        });
+      }
+
+      var statusLabel = s.status_enum || s.status || "unknown";
+      var dotClass = "status-dot-" + statusLabel.replace(/_/g, "-");
+
+      html += '<tr>' +
+        '<td><a href="' + DEVIN_UI + sid + '" target="_blank" title="' + escHtml(sid) + '">' + escHtml(shortId) + '</a></td>' +
+        '<td>' + linkedIssue + '</td>' +
+        '<td><span class="status-dot ' + dotClass + '"></span>' + escHtml(statusLabel) + '</td>' +
+        '<td>' + relativeTime(s.created_at) + '</td>' +
+        '<td><a href="' + DEVIN_UI + sid + '" target="_blank" class="btn" style="padding:2px 10px;font-size:12px">View session</a></td>' +
+        '</tr>';
+    });
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  }
+
+  // --- Render: Issues table ---
+  function renderIssuesTable() {
+    var repo = cfg("TARGET_REPO");
+    var label = cfg("TRIGGER_LABEL");
+    var issues = cachedIssues;
+
+    var filtered;
+    if (currentIssueFilter === "open") {
+      filtered = issues.filter(function (i) { return i.state === "open"; });
+    } else if (currentIssueFilter === "in-progress") {
+      filtered = issues.filter(function (i) {
+        return i.state === "open" && linkMap.issueTopr[i.number] &&
+          linkMap.issueTopr[i.number].state === "open";
+      });
+    } else if (currentIssueFilter === "closed") {
+      filtered = issues.filter(function (i) { return i.state === "closed"; });
+    } else {
+      filtered = issues;
+    }
+
+    var tbody = $("issuesTable");
+    var showAll = $("issuesShowAll");
+
+    if (filtered.length === 0) {
+      var msg = currentIssueFilter === "open"
+        ? 'No open issues with label "' + escHtml(label) + '"'
+        : "No issues match this filter";
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-state">' + msg + '</td></tr>';
+      showAll.style.display = "none";
+      return;
+    }
+
+    var display = filtered.slice(0, MAX_TABLE_ROWS);
+    tbody.innerHTML = display.map(function (iss) {
+      var stateDot = iss.state === "open" ? "state-dot-open" : "state-dot-closed";
+      var pr = linkMap.issueTopr[iss.number];
+      var prCol = "&mdash;";
+      if (pr) {
+        var prStatus = pr.merged_at ? "merged" : pr.state;
+        prCol = '<a href="' + pr.html_url + '" target="_blank">#' + pr.number + '</a> (' + prStatus + ')';
+      }
+
+      var ageText = ago(iss.created_at);
+      if (iss.state === "closed" && iss.closed_at) {
+        ageText = "Closed " + ago(iss.closed_at) + " ago";
+        if (pr && pr.merged_at) {
+          ageText += " by #" + pr.number;
+        }
+      }
+
+      return '<tr>' +
+        '<td><span class="state-dot ' + stateDot + '"></span>' + escHtml(iss.title) + '</td>' +
+        '<td>' + prCol + '</td>' +
+        '<td>' + ageText + '</td>' +
+        '<td><a href="' + iss.html_url + '" target="_blank">View</a></td>' +
+        '</tr>';
+    }).join("");
+
+    if (filtered.length > MAX_TABLE_ROWS) {
+      showAll.innerHTML = '<a href="https://github.com/' + repo + '/issues?q=label%3A' +
+        encodeURIComponent(label) + '" target="_blank">Show all on GitHub &rarr;</a>';
+      showAll.style.display = "block";
+    } else {
+      showAll.style.display = "none";
+    }
+  }
+
+  // --- Render: PRs table ---
+  function renderPrsTable() {
+    var c = {
+      rate: cfg("ENGINEER_HOURLY_RATE"),
+      hoursPerIssue: cfg("HOURS_PER_ISSUE"),
+      reviewHours: cfg("REVIEW_HOURS_PER_PR"),
+    };
+    var repo = cfg("TARGET_REPO");
+    var prs = cachedPrs;
+
+    var devinPRs = prs.filter(function (pr) {
+      var body = (pr.body || "").toLowerCase();
+      var title = (pr.title || "").toLowerCase();
+      var labels = (pr.labels || []).map(function (l) { return l.name.toLowerCase(); });
+      return body.indexOf("fixes #") !== -1 ||
+        body.indexOf("devin") !== -1 ||
+        title.indexOf("devin") !== -1 ||
+        labels.indexOf("automated-fix") !== -1 ||
+        labels.indexOf("automated-cleanup") !== -1;
+    });
+
+    var filtered;
+    if (currentPrFilter === "open") {
+      filtered = devinPRs.filter(function (pr) { return pr.state === "open"; });
+    } else if (currentPrFilter === "merged") {
+      filtered = devinPRs.filter(function (pr) { return !!pr.merged_at; });
+    } else if (currentPrFilter === "closed") {
+      filtered = devinPRs.filter(function (pr) { return pr.state === "closed" && !pr.merged_at; });
+    } else {
+      filtered = devinPRs;
+    }
+
+    var prTbody = $("prsTable");
+    var showAll = $("prsShowAll");
+
+    if (filtered.length === 0) {
+      prTbody.innerHTML = '<tr><td colspan="5" class="empty-state">No PRs match this filter</td></tr>';
+      showAll.style.display = "none";
+      return;
+    }
+
+    var display = filtered.slice(0, MAX_TABLE_ROWS);
+    prTbody.innerHTML = display.map(function (pr) {
+      var status, badge, ageExtra = "";
+      if (pr.merged_at) {
+        status = "merged";
+        badge = "badge-merged";
+        ageExtra = "Merged " + ago(pr.merged_at) + " ago";
+      } else if (pr.state === "open") {
+        status = "open";
+        badge = "badge-open";
+      } else {
+        status = "closed";
+        badge = "badge-closed";
+      }
+      var hrs = pr.merged_at ? fmtHrs(c.hoursPerIssue - c.reviewHours) : "-";
+
+      var issueNum = linkMap.prToIssue[pr.number];
+      var issueCol = "&mdash;";
+      if (issueNum) {
+        issueCol = '<a href="https://github.com/' + repo + '/issues/' + issueNum +
+          '" target="_blank">#' + issueNum + '</a>';
+      }
+
+      return '<tr>' +
+        '<td>' + escHtml(pr.title) + (ageExtra ? '<br><span style="font-size:11px;color:var(--muted)">' + ageExtra + '</span>' : '') + '</td>' +
+        '<td><span class="badge ' + badge + '">' + status + '</span></td>' +
+        '<td>' + issueCol + '</td>' +
+        '<td>' + hrs + '</td>' +
+        '<td><a href="' + pr.html_url + '" target="_blank">View</a></td>' +
+        '</tr>';
+    }).join("");
+
+    if (filtered.length > MAX_TABLE_ROWS) {
+      showAll.innerHTML = '<a href="https://github.com/' + repo + '/pulls" target="_blank">Show all on GitHub &rarr;</a>';
+      showAll.style.display = "block";
+    } else {
+      showAll.style.display = "none";
+    }
+  }
+
+  // --- Render: headline + supporting cards ---
+  function renderCards(issues, prs, activeSessions) {
     var c = {
       rate: cfg("ENGINEER_HOURLY_RATE"),
       hoursPerIssue: cfg("HOURS_PER_ISSUE"),
       reviewHours: cfg("REVIEW_HOURS_PER_PR"),
     };
 
-    // Classify PRs
     var devinPRs = prs.filter(function (pr) {
       var body = (pr.body || "").toLowerCase();
       var title = (pr.title || "").toLowerCase();
@@ -561,20 +936,17 @@ under the License.
     var merged30d = merged.filter(function (pr) { return isLast30d(pr.merged_at); });
     var opened30d = devinPRs.filter(function (pr) { return isLast30d(pr.created_at); });
 
-    // Headline 1: $ Saved
     var s30 = calcSavings(merged30d.length, opened30d.length, c);
     var sAll = calcSavings(merged.length, devinPRs.length, c);
 
     if (merged.length === 0) {
       $("dollarsSaved").textContent = "$0 saved";
       $("dollarsSavedAllTime").textContent = "connect issues to start";
-      $("dollarsSaved").parentElement.classList.add("card-hero");
     } else {
       $("dollarsSaved").textContent = fmt$(s30.dollars);
       $("dollarsSavedAllTime").textContent = "All-time: " + fmt$(sAll.dollars);
     }
 
-    // Headline 2: Hours
     if (merged.length === 0) {
       $("hoursSaved").textContent = "0";
       $("hoursSavedAllTime").textContent = "All-time: 0 hrs";
@@ -583,21 +955,17 @@ under the License.
       $("hoursSavedAllTime").textContent = "All-time: " + fmtHrs(sAll.hours) + " hrs";
     }
 
-    // Headline 3: Issues closed
-    var closedIssueCount = merged.length;
-    var closedIssueCount30d = merged30d.length;
-    $("issuesClosed").textContent = closedIssueCount;
-    $("issuesClosed30d").textContent = "30-day: " + closedIssueCount30d;
+    $("issuesClosed").textContent = merged.length;
+    $("issuesClosed30d").textContent = "30-day: " + merged30d.length;
 
-    // Headline 4: Avg time to PR
     var timesHours = [];
     devinPRs.forEach(function (pr) {
-      var body = pr.body || "";
-      var match = body.match(/fixes\s+#(\d+)/i);
-      if (match) {
-        var issueMatch = issues.concat([]).find(function () { return true; });
-        if (pr.created_at) {
-          timesHours.push(2);
+      var issueNum = parseLinkedIssueNum(pr.body);
+      if (issueNum) {
+        var linkedIssue = issues.find(function (i) { return i.number === issueNum; });
+        if (linkedIssue && pr.created_at && linkedIssue.created_at) {
+          var hrs = (new Date(pr.created_at) - new Date(linkedIssue.created_at)) / (1000 * 60 * 60);
+          if (hrs >= 0 && hrs < 720) timesHours.push(hrs);
         }
       }
     });
@@ -608,10 +976,8 @@ under the License.
       $("avgTimeToPR").textContent = "-";
     }
 
-    // Supporting: PR pipeline
     $("prPipeline").textContent = merged.length + " / " + openPRs.length + " / " + closed.length;
 
-    // Supporting: Success rate
     if (opened30d.length === 0) {
       $("successRate").textContent = "-";
     } else {
@@ -619,73 +985,18 @@ under the License.
       $("successRate").textContent = rate + "%";
     }
 
-    // Supporting: Active sessions
     $("activeSessions").textContent = activeSessions.length;
 
-    // Supporting: Throughput (4-week avg)
     var fourWeeksAgo = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000);
     var merged4w = merged.filter(function (pr) { return new Date(pr.merged_at) >= fourWeeksAgo; });
     var weeklyRate = merged4w.length / 4;
     $("throughput").textContent = weeklyRate.toFixed(1);
 
-    // Assumptions display
     $("aRate").textContent = c.rate;
     $("aHours").textContent = c.hoursPerIssue;
     $("aReview").textContent = c.reviewHours;
 
-    // Issues table
-    var repo = cfg("TARGET_REPO");
-    var tbody = $("issuesTable");
-    if (issues.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No open issues with label "' +
-        cfg("TRIGGER_LABEL") + '"</td></tr>';
-    } else {
-      tbody.innerHTML = issues.map(function (iss) {
-        var labels = (iss.labels || []).map(function (l) { return l.name; }).join(", ");
-        return '<tr>' +
-          '<td>' + escHtml(iss.title) + '</td>' +
-          '<td>' + escHtml(labels) + '</td>' +
-          '<td>' + ago(iss.created_at) + '</td>' +
-          '<td><a href="' + iss.html_url + '" target="_blank">View</a></td>' +
-          '</tr>';
-      }).join("");
-    }
-
-    // PRs table
-    var prTbody = $("prsTable");
-    if (devinPRs.length === 0) {
-      prTbody.innerHTML = '<tr><td colspan="4" class="empty-state">No Devin PRs yet</td></tr>';
-    } else {
-      prTbody.innerHTML = devinPRs.slice(0, 20).map(function (pr) {
-        var status, badge;
-        if (pr.merged_at) {
-          status = "merged";
-          badge = "badge-merged";
-        } else if (pr.state === "open") {
-          status = "open";
-          badge = "badge-open";
-        } else {
-          status = "closed";
-          badge = "badge-closed";
-        }
-        var hrs = pr.merged_at ? fmtHrs(c.hoursPerIssue - c.reviewHours) : "-";
-        return '<tr>' +
-          '<td>' + escHtml(pr.title) + '</td>' +
-          '<td><span class="badge ' + badge + '">' + status + '</span></td>' +
-          '<td>' + hrs + '</td>' +
-          '<td><a href="' + pr.html_url + '" target="_blank">View</a></td>' +
-          '</tr>';
-      }).join("");
-    }
-
-    // Timestamp
     $("lastRefresh").textContent = "Updated " + new Date().toLocaleTimeString();
-  }
-
-  function escHtml(s) {
-    var div = document.createElement("div");
-    div.textContent = s;
-    return div.innerHTML;
   }
 
   // --- Data loading ---
@@ -697,14 +1008,36 @@ under the License.
     var token = resolveDevinToken().token;
 
     Promise.all([
-      fetchOpenIssues(repo, label).catch(function () { return []; }),
+      fetchAllIssues(repo, label).catch(function () { return []; }),
       fetchAllPRs(repo).catch(function () { return []; }),
-      fetchActiveSessions(token),
+      fetchDevinSessions(token),
     ]).then(function (results) {
       var issues = results[0].filter(function (i) { return !i.pull_request; });
-      render(issues, results[1], results[2]);
+      var prs = results[1];
+      var sessions = results[2];
+
+      cachedIssues = issues;
+      cachedPrs = prs;
+      cachedSessions = sessions;
+      linkMap = buildLinkMap(issues, prs);
+
+      var active = getActiveSessions(sessions);
+      renderCards(issues, prs, active);
+      renderSessionsPanel(sessions);
+      renderIssuesTable();
+      renderPrsTable();
     }).catch(function (err) {
       console.error("Failed to load data:", err);
+    });
+  }
+
+  function loadSessions() {
+    var token = resolveDevinToken().token;
+    fetchDevinSessions(token).then(function (sessions) {
+      cachedSessions = sessions;
+      var active = getActiveSessions(sessions);
+      $("activeSessions").textContent = active.length;
+      renderSessionsPanel(sessions);
     });
   }
 
@@ -737,6 +1070,7 @@ under the License.
   initTokenUI();
   loadData();
   setInterval(loadData, cfg("REFRESH_INTERVAL_MS"));
+  setInterval(loadSessions, 30000);
 })();
 </script>
 </body>
