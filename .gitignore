@@ -139,3 +139,6 @@ PROJECT.md
 oxc-custom-build/
 *.code-workspace
 *.duckdb
+
+# Dashboard secrets (contains Devin API token)
+dashboard/secrets.js

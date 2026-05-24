@@ -200,7 +200,7 @@ under the License.
     font-size: 14px;
   }
 
-  /* Token input */
+  /* Token bar */
   .token-bar {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -219,6 +219,8 @@ under the License.
     border-radius: 4px;
     font-size: 13px;
   }
+  .token-bar input[type="checkbox"] { flex: none; width: auto; }
+  .token-loaded { color: var(--green); font-weight: 500; }
 
   @media (max-width: 900px) {
     .cards-headline, .cards-supporting { grid-template-columns: repeat(2, 1fr); }
@@ -242,12 +244,15 @@ under the License.
 
 <div class="container">
 
-  <!-- Devin API token -->
+  <!-- Token bar -->
   <div class="token-bar" id="tokenBar">
-    <label>Devin API token (for active sessions):</label>
-    <input type="password" id="devinToken" placeholder="pat-..." />
-    <button class="btn" onclick="saveToken()">Save</button>
-    <span id="tokenStatus" style="font-size:12px;color:var(--muted)"></span>
+    <span class="token-loaded" id="tokenLoaded" style="display:none">Token loaded &#10003; &nbsp;<a id="tokenChangeLink" onclick="showTokenInput()">Change</a></span>
+    <span id="tokenInputWrap">
+      <label>Devin API token (for active sessions):</label>
+      <input type="password" id="devinToken" placeholder="pat-..." />
+      <label style="font-size:12px;white-space:nowrap"><input type="checkbox" id="rememberToken" checked /> Remember on this browser</label>
+      <button class="btn" onclick="submitToken()">Save</button>
+    </span>
   </div>
 
   <!-- Headline metrics -->
@@ -343,7 +348,7 @@ under the License.
       <span id="aHours">4</span>hr/issue,
       <span id="aReview">0.5</span>hr/PR review.
     </span>
-    <a onclick="toggleEdit()">Edit assumptions</a>
+    <span><a onclick="toggleEdit()">Edit assumptions</a> | <a onclick="clearSavedToken()">Clear saved token</a></span>
   </div>
 
   <!-- Edit assumptions panel -->
@@ -387,6 +392,7 @@ under the License.
   </div>
 </div>
 
+<script src="secrets.js" onerror=""></script>
 <script src="config.js"></script>
 <script>
 (function () {
@@ -404,7 +410,57 @@ under the License.
   function setCfg(key, val) { localStorage.setItem("re_" + key, JSON.stringify(val)); }
   function clearCfg(key) { localStorage.removeItem("re_" + key); }
 
-  function getDevinToken() { return localStorage.getItem("re_devin_token") || ""; }
+  // --- Token resolution (3-tier) ---
+  function resolveDevinToken() {
+    if (typeof window.DEVIN_TOKEN === "string" && window.DEVIN_TOKEN && window.DEVIN_TOKEN !== "your-devin-token-here") {
+      return { token: window.DEVIN_TOKEN, source: "secrets" };
+    }
+    var ls = localStorage.getItem("devinToken");
+    if (ls) return { token: ls, source: "localStorage" };
+    return { token: "", source: "none" };
+  }
+
+  function resolveGitHubToken() {
+    if (typeof window.GITHUB_TOKEN === "string" && window.GITHUB_TOKEN && window.GITHUB_TOKEN !== "your-github-token-here") {
+      return window.GITHUB_TOKEN;
+    }
+    return localStorage.getItem("githubToken") || "";
+  }
+
+  function initTokenUI() {
+    var resolved = resolveDevinToken();
+    if (resolved.token) {
+      $("tokenLoaded").style.display = "";
+      $("tokenInputWrap").style.display = "none";
+    } else {
+      $("tokenLoaded").style.display = "none";
+      $("tokenInputWrap").style.display = "";
+    }
+  }
+
+  window.showTokenInput = function () {
+    $("tokenLoaded").style.display = "none";
+    $("tokenInputWrap").style.display = "";
+    $("devinToken").value = "";
+    $("devinToken").focus();
+  };
+
+  window.submitToken = function () {
+    var token = $("devinToken").value.trim();
+    if (!token) return;
+    if ($("rememberToken").checked) {
+      localStorage.setItem("devinToken", token);
+    }
+    $("devinToken").value = "";
+    initTokenUI();
+    loadData();
+  };
+
+  window.clearSavedToken = function () {
+    localStorage.removeItem("devinToken");
+    initTokenUI();
+    loadData();
+  };
 
   // --- Helpers ---
   function $(id) { return document.getElementById(id); }
@@ -431,9 +487,10 @@ under the License.
 
   // --- GitHub API ---
   function ghFetch(path) {
-    return fetch(GH_API + path, {
-      headers: { Accept: "application/vnd.github.v3+json" },
-    }).then(function (r) {
+    var headers = { Accept: "application/vnd.github.v3+json" };
+    var ghToken = resolveGitHubToken();
+    if (ghToken) headers.Authorization = "Bearer " + ghToken;
+    return fetch(GH_API + path, { headers: headers }).then(function (r) {
       if (!r.ok) throw new Error("GitHub API " + r.status);
       return r.json();
     });
@@ -462,10 +519,7 @@ under the License.
   function fetchActiveSessions(token) {
     if (!token) return Promise.resolve([]);
     return fetch(DEVIN_API + "/sessions", {
-      headers: {
-        Authorization: "Bearer " + token,
-        "Content-Type": "application/json",
-      },
+      headers: { Authorization: "Bearer " + token },
     })
       .then(function (r) {
         if (!r.ok) return [];
@@ -640,11 +694,12 @@ under the License.
     var label = cfg("TRIGGER_LABEL");
     $("headerRepo").textContent = repo;
     $("headerLabel").textContent = label;
+    var token = resolveDevinToken().token;
 
     Promise.all([
       fetchOpenIssues(repo, label).catch(function () { return []; }),
       fetchAllPRs(repo).catch(function () { return []; }),
-      fetchActiveSessions(getDevinToken()),
+      fetchActiveSessions(token),
     ]).then(function (results) {
       var issues = results[0].filter(function (i) { return !i.pull_request; });
       render(issues, results[1], results[2]);
@@ -678,24 +733,8 @@ under the License.
     loadData();
   };
 
-  // --- Token ---
-  window.saveToken = function () {
-    var token = $("devinToken").value.trim();
-    if (token) {
-      localStorage.setItem("re_devin_token", token);
-      $("tokenStatus").textContent = "Saved";
-      loadData();
-    }
-  };
-  (function () {
-    var t = getDevinToken();
-    if (t) {
-      $("devinToken").value = t;
-      $("tokenStatus").textContent = "Saved";
-    }
-  })();
-
   // --- Init ---
+  initTokenUI();
   loadData();
   setInterval(loadData, cfg("REFRESH_INTERVAL_MS"));
 })();

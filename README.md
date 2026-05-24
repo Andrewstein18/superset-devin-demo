@@ -137,15 +137,34 @@ trigger_label: "devin-fix"
 
 Environment variables override `config.yaml` values.
 
-### 4. Dashboard
+### 4. Dashboard — quick start
 
 ```bash
 # Open directly in a browser — no server needed
 open dashboard/index.html
 ```
 
-Enter your Devin API token in the dashboard to see active session counts.
-The GitHub data (issues, PRs) loads without authentication for public repos.
+On first load, paste your Devin API token when prompted. Check
+"Remember on this browser" and it will be saved for next time — no
+re-entry needed.
+
+GitHub data (issues, PRs) loads without authentication for public repos.
+
+### 5. Dashboard — local dev convenience
+
+For a fully automatic load (no manual token entry at all):
+
+```bash
+cp dashboard/secrets.js.example dashboard/secrets.js
+# Edit dashboard/secrets.js and paste your tokens
+```
+
+`secrets.js` is gitignored and will never be committed. It supports two tokens:
+
+- **`GITHUB_TOKEN`** — raises the GitHub API rate limit from 60 to 5,000
+  requests/hour. Create one at https://github.com/settings/tokens (no
+  scopes needed for public repos).
+- **`DEVIN_TOKEN`** — enables the "Active Sessions" card.
 
 ## Project Structure
 
