@@ -25,6 +25,7 @@ import {
   QueryFormMetric,
 } from '@superset-ui/core';
 import {
+  ControlStateMapping,
   getStandardizedControls,
   isStandardizedFormData,
   StandardizedControls,
@@ -83,6 +84,24 @@ export const publicControls = [
   // dashboard context
   'dashboardId', // preserve dashboard context when changing viz type
 ];
+
+interface TransformState {
+  form_data: QueryFormData;
+  common?: {
+    conf: {
+      DEFAULT_VIZ_TYPE?: string;
+    };
+  };
+  datasource?: {
+    type: string;
+  };
+  controls?: Record<string, unknown>;
+}
+
+interface TransformResult {
+  formData: QueryFormData;
+  controlsState: Record<string, unknown>;
+}
 
 export class StandardizedFormData {
   private sfd: StandardizedFormDataInterface;
@@ -188,10 +207,8 @@ export class StandardizedFormData {
 
   transform(
     targetVizType: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    exploreState: Record<string, any>,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ): any {
+    exploreState: TransformState,
+  ): TransformResult {
     /*
      * Transform form_data between different viz. Return new form_data and controlsState.
      * 1. get memorized form_data by viz type or get previous form_data
@@ -203,21 +220,21 @@ export class StandardizedFormData {
      * 7. to refresh validator message
      * */
     const latestFormData = this.getLatestFormData(targetVizType);
-    const publicFormData: Record<string, any> = {};
+    const publicFormData: Partial<QueryFormData> = {};
     publicControls.forEach(key => {
       if (key in exploreState.form_data) {
         publicFormData[key] = exploreState.form_data[key];
       }
     });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const targetControlsState = getControlsState(exploreState as any, {
+    const targetControlsState = getControlsState(
+      exploreState as Parameters<typeof getControlsState>[0],
+      {
       ...latestFormData,
       ...publicFormData,
       viz_type: targetVizType,
     });
     const targetFormData = {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ...getFormDataFromControls(targetControlsState as any),
+      ...getFormDataFromControls(targetControlsState as ControlStateMapping),
       // Preserve dashboard context when switching viz types.
       ...(publicFormData.dashboardId && {
         dashboardId: publicFormData.dashboardId,
@@ -243,18 +260,19 @@ export class StandardizedFormData {
       getStandardizedControls().clear();
       rv = {
         formData: transformed,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        controlsState: getControlsState(exploreState as any, transformed),
+        controlsState: getControlsState(
+          exploreState as Parameters<typeof getControlsState>[0],
+          transformed,
+        ),
       };
     }
 
     // refresh validator message
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     rv.controlsState = getControlsState(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      { ...exploreState, controls: rv.controlsState } as any,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      rv.formData as any,
+      { ...exploreState, controls: rv.controlsState } as Parameters<
+        typeof getControlsState
+      >[0],
+      rv.formData,
     );
     return rv;
   }
