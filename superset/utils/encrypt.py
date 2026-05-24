@@ -21,7 +21,7 @@ from typing import Any, Optional
 
 from flask import Flask
 from flask_babel import lazy_gettext as _
-from sqlalchemy import Table, text, TypeDecorator
+from sqlalchemy import select, Table, TypeDecorator
 from sqlalchemy.engine import Connection, Dialect, Row
 from sqlalchemy_utils import EncryptedType as SqlaEncryptedType
 
@@ -172,16 +172,16 @@ class SecretsMigrator:
         conn: Connection,
         pk_columns: list[str],
         column_names: list[str],
-        table_name: str,
+        table: Table,
     ) -> Row:
-        cols = ",".join(pk_columns + column_names)
-        return conn.execute(f"SELECT {cols} FROM {table_name}")  # noqa: S608
+        columns = [table.c[name] for name in pk_columns + column_names]
+        return conn.execute(select(*columns))
 
     def _re_encrypt_row(
         self,
         conn: Connection,
         row: Row,
-        table_name: str,
+        table: Table,
         columns: dict[str, EncryptedType],
         pk_columns: list[str],
         stats: ReEncryptStats,
@@ -209,11 +209,13 @@ class SecretsMigrator:
         If no columns need re-encryption, no UPDATE is issued.
 
         :param row: Current row to reencrypt
+        :param table: SQLAlchemy Table object used for query construction
         :param columns: Meta info from columns
         :param pk_columns: Primary key column names used to target the row
         :param stats: Mutable counters updated per column
         """
         re_encrypted_columns = {}
+        table_name = table.name
 
         for column_name, encrypted_type in columns.items():
             raw_value = self._read_bytes(column_name, row[column_name])
@@ -263,16 +265,10 @@ class SecretsMigrator:
         if not re_encrypted_columns:
             return
 
-        set_cols = ",".join(f"{name} = :{name}" for name in re_encrypted_columns)
-        where_clause = " AND ".join(f"{pk} = :_pk_{pk}" for pk in pk_columns)
-        pk_bind = {f"_pk_{pk}": row[pk] for pk in pk_columns}
-        conn.execute(
-            text(
-                f"UPDATE {table_name} SET {set_cols} WHERE {where_clause}"  # noqa: S608
-            ),
-            **pk_bind,
-            **re_encrypted_columns,
-        )
+        stmt = table.update()
+        for pk in pk_columns:
+            stmt = stmt.where(table.c[pk] == row[pk])
+        conn.execute(stmt.values(**re_encrypted_columns))
 
     def run(self) -> ReEncryptStats:
         """
@@ -299,13 +295,11 @@ class SecretsMigrator:
                     continue
                 column_names = list(columns.keys())
                 rows = self._select_columns_from_table(
-                    conn, pk_columns, column_names, table_name
+                    conn, pk_columns, column_names, table
                 )
 
                 for row in rows:
-                    self._re_encrypt_row(
-                        conn, row, table_name, columns, pk_columns, stats
-                    )
+                    self._re_encrypt_row(conn, row, table, columns, pk_columns, stats)
 
             logger.info(
                 "Re-encryption summary: %d re-encrypted, %d skipped,"

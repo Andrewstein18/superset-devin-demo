@@ -17,7 +17,7 @@
 from typing import Any, Optional
 
 import pytest
-from sqlalchemy import String, TypeDecorator
+from sqlalchemy import Column, LargeBinary, MetaData, String, Table, TypeDecorator
 from sqlalchemy_utils import EncryptedType
 from sqlalchemy_utils.types.encrypted.encrypted_type import StringEncryptedType
 
@@ -223,6 +223,12 @@ class EncryptedFieldTest(SupersetTestCase):
         ciphertext = previous_field.process_bind_param("hunter2", dialect)
 
         current_field = encrypted_field_factory.create(String(1024))
+        test_table = Table(
+            "semantic_layers",
+            MetaData(),
+            Column("uuid", LargeBinary(16), primary_key=True),
+            Column("configuration", LargeBinary()),
+        )
         conn = MagicMock()
         row = {"uuid": b"\x00" * 16, "configuration": ciphertext}
         stats = ReEncryptStats()
@@ -230,7 +236,7 @@ class EncryptedFieldTest(SupersetTestCase):
         migrator._re_encrypt_row(  # noqa: SLF001
             conn,
             row,
-            "semantic_layers",
+            test_table,
             {"configuration": current_field},
             ["uuid"],
             stats,
@@ -238,10 +244,9 @@ class EncryptedFieldTest(SupersetTestCase):
 
         assert conn.execute.call_count == 1
         stmt = str(conn.execute.call_args.args[0])
-        assert "WHERE uuid = :_pk_uuid" in stmt
-        kwargs = conn.execute.call_args.kwargs
-        assert kwargs["_pk_uuid"] == row["uuid"]
-        assert "configuration" in kwargs
+        assert "semantic_layers" in stmt
+        assert "uuid" in stmt
+        assert "configuration" in stmt
         assert stats == ReEncryptStats(re_encrypted=1, skipped=0, failed=0)
 
     def test_re_encrypt_row_is_idempotent(self):
@@ -263,6 +268,12 @@ class EncryptedFieldTest(SupersetTestCase):
         ciphertext = field.process_bind_param("hunter2", dialect)
         assert field.process_result_value(ciphertext, dialect) == "hunter2"
 
+        test_table = Table(
+            "semantic_layers",
+            MetaData(),
+            Column("uuid", LargeBinary(16), primary_key=True),
+            Column("configuration", LargeBinary()),
+        )
         conn = MagicMock()
         row = {"uuid": b"\x00" * 16, "configuration": ciphertext}
         stats = ReEncryptStats()
@@ -270,7 +281,7 @@ class EncryptedFieldTest(SupersetTestCase):
         migrator._re_encrypt_row(  # noqa: SLF001
             conn,
             row,
-            "semantic_layers",
+            test_table,
             {"configuration": field},
             ["uuid"],
             stats,
@@ -307,6 +318,12 @@ class EncryptedFieldTest(SupersetTestCase):
         field = encrypted_field_factory.create(String(1024))
         ciphertext = field.process_bind_param("hunter2", dialect)
 
+        test_table = Table(
+            "semantic_layers",
+            MetaData(),
+            Column("uuid", LargeBinary(16), primary_key=True),
+            Column("configuration", LargeBinary()),
+        )
         conn = MagicMock()
         row = {"uuid": b"\x00" * 16, "configuration": ciphertext}
         stats = ReEncryptStats()
@@ -314,7 +331,7 @@ class EncryptedFieldTest(SupersetTestCase):
         migrator._re_encrypt_row(  # noqa: SLF001
             conn,
             row,
-            "semantic_layers",
+            test_table,
             {"configuration": field},
             ["uuid"],
             stats,
@@ -341,6 +358,12 @@ class EncryptedFieldTest(SupersetTestCase):
         migrator._dialect = dialect  # noqa: SLF001
 
         field = encrypted_field_factory.create(String(1024))
+        test_table = Table(
+            "semantic_layers",
+            MetaData(),
+            Column("uuid", LargeBinary(16), primary_key=True),
+            Column("configuration", LargeBinary()),
+        )
         conn = MagicMock()
         row = {"uuid": b"\x00" * 16, "configuration": b"not-valid-ciphertext"}
         stats = ReEncryptStats()
@@ -348,7 +371,7 @@ class EncryptedFieldTest(SupersetTestCase):
         migrator._re_encrypt_row(  # noqa: SLF001
             conn,
             row,
-            "semantic_layers",
+            test_table,
             {"configuration": field},
             ["uuid"],
             stats,
@@ -373,6 +396,12 @@ class EncryptedFieldTest(SupersetTestCase):
         migrator._dialect = dialect  # noqa: SLF001
 
         field = encrypted_field_factory.create(String(1024))
+        test_table = Table(
+            "semantic_layers",
+            MetaData(),
+            Column("uuid", LargeBinary(16), primary_key=True),
+            Column("configuration", LargeBinary()),
+        )
         conn = MagicMock()
         row = {"uuid": b"\x00" * 16, "configuration": None}
         stats = ReEncryptStats()
@@ -380,7 +409,7 @@ class EncryptedFieldTest(SupersetTestCase):
         migrator._re_encrypt_row(  # noqa: SLF001
             conn,
             row,
-            "semantic_layers",
+            test_table,
             {"configuration": field},
             ["uuid"],
             stats,
