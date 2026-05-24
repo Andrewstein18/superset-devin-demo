@@ -537,7 +537,7 @@ def markdown(raw: str, markup_wrap: bool | None = False) -> str:
 
 
 def sanitize_svg_content(svg_content: str) -> str:
-    """Basic SVG protection - remove obvious XSS vectors, trust admin input otherwise.
+    """Remove obvious XSS vectors from SVG content.
 
     Minimal protection approach that removes scripts and javascript: URLs while
     preserving all legitimate SVG features. Assumes admin-provided content.
@@ -574,16 +574,9 @@ def sanitize_svg_content(svg_content: str) -> str:
 
 
 def sanitize_url(url: str) -> str:
-    """Sanitize URL using urllib.parse to block dangerous schemes.
+    """Block dangerous URL schemes (javascript:, data:, etc.).
 
-    Simple validation using standard library. Allows relative URLs and
-    safe absolute URLs while blocking javascript: and other dangerous schemes.
-
-    Args:
-        url: Raw URL string
-
-    Returns:
-        str: Sanitized URL or empty string if dangerous
+    Allows relative URLs and http/https. Returns empty string if unsafe.
     """
     if not url or not url.strip():
         return ""
@@ -611,6 +604,11 @@ def sanitize_url(url: str) -> str:
 
 
 def readfile(file_path: str) -> str | None:
+    """Read and return the entire contents of a file as a string.
+
+    :param file_path: Absolute or relative path to the file
+    :returns: File contents as a string
+    """
     with open(file_path) as f:
         content = f.read()
     return content
@@ -2082,6 +2080,11 @@ def apply_max_row_limit(
 
 
 def create_zip(files: dict[str, Any]) -> BytesIO:
+    """Create an in-memory ZIP archive from a mapping of filenames to contents.
+
+    :param files: Mapping of archive entry names to their byte content
+    :returns: A seeked-to-zero BytesIO containing the ZIP data
+    """
     buf = BytesIO()
     with ZipFile(buf, "w") as bundle:
         for filename, contents in files.items():
@@ -2126,6 +2129,12 @@ def remove_extra_adhoc_filters(form_data: dict[str, Any]) -> None:
 
 
 def to_int(v: Any, value_if_invalid: int = 0) -> int:
+    """Safely cast a value to int, returning a default on failure.
+
+    :param v: Value to cast
+    :param value_if_invalid: Fallback when casting fails (default 0)
+    :returns: Integer value or the fallback
+    """
     try:
         return int(v)
     except (ValueError, TypeError):
@@ -2133,6 +2142,10 @@ def to_int(v: Any, value_if_invalid: int = 0) -> int:
 
 
 def get_query_source_from_request() -> QuerySource | None:
+    """Infer the query source (dashboard, chart, SQL Lab) from the HTTP referrer.
+
+    :returns: A QuerySource enum member, or None if undetermined
+    """
     if not request or not request.referrer:
         return None
     if "/superset/dashboard/" in request.referrer:

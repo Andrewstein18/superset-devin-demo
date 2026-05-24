@@ -71,6 +71,7 @@ def get_example_database() -> Database:
 
 
 def get_main_database() -> Database:
+    """Return (or create) the main metadata database connection object."""
     # pylint: disable=import-outside-toplevel
 
     db_uri = app.config["SQLALCHEMY_DATABASE_URI"]
@@ -80,6 +81,7 @@ def get_main_database() -> Database:
 # TODO - the below method used by tests so should move there but should move together
 # with above function... think of how to refactor it
 def remove_database(database: Database) -> None:
+    """Delete a Database record from the metadata store and flush."""
     # pylint: disable=import-outside-toplevel
     from superset import db
 

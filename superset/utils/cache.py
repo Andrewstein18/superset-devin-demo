@@ -39,6 +39,12 @@ logger = logging.getLogger(__name__)
 
 
 def generate_cache_key(values_dict: dict[str, Any], key_prefix: str = "") -> str:
+    """Build a deterministic cache key by hashing a dictionary.
+
+    :param values_dict: Payload to hash
+    :param key_prefix: Optional string prepended to the hash
+    :returns: Cache key string
+    """
     hash_str = hash_from_dict(values_dict, default=json_int_dttm_ser)
     cache_key = f"{key_prefix}{hash_str}"
 

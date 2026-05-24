@@ -65,6 +65,8 @@ def escape_value(value: str) -> str:
 
 
 def df_to_escaped_csv(df: pd.DataFrame, **kwargs: Any) -> Any:
+    """Export a DataFrame to CSV with injection-safe escaping applied."""
+
     def escape_values(v: Any) -> Union[str, Any]:
         return escape_value(v) if isinstance(v, str) else v
 
@@ -84,6 +86,7 @@ def df_to_escaped_csv(df: pd.DataFrame, **kwargs: Any) -> Any:
 def get_chart_csv_data(
     chart_url: str, auth_cookies: Optional[dict[str, str]] = None
 ) -> Optional[bytes]:
+    """Fetch raw CSV bytes from a chart endpoint, authenticating via cookies."""
     content = None
     if auth_cookies:
         opener = urllib.request.build_opener()

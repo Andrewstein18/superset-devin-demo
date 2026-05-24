@@ -174,6 +174,11 @@ class SecretsMigrator:
         column_names: list[str],
         table_name: str,
     ) -> Row:
+        """Select primary-key and encrypted columns from a table.
+
+        Note: column and table names originate from SQLAlchemy ORM metadata,
+        not from user input.
+        """
         cols = ",".join(pk_columns + column_names)
         return conn.execute(f"SELECT {cols} FROM {table_name}")  # noqa: S608
 
