@@ -23,17 +23,22 @@ import {
   VizType,
 } from '@superset-ui/core';
 import type { QueryFormData } from '@superset-ui/core';
+import type {
+  BaseControlConfig,
+  ControlPanelState,
+  ControlStateMapping,
+} from '@superset-ui/chart-controls';
 import { getAllControlsState, getFormDataFromControls } from './controlUtils';
 import { controls } from './controls';
 
-interface ExploreState {
+interface ExploreStoreInput {
   common?: {
     conf: {
       DEFAULT_VIZ_TYPE?: string;
     };
   };
   datasource: {
-    type: string;
+    type: DatasourceType | string;
   };
 }
 
@@ -92,7 +97,7 @@ export function handleDeprecatedControls(formData: FormData): void {
 }
 
 export function getControlsState(
-  state: ExploreState,
+  state: ExploreStoreInput,
   inputFormData: FormData,
 ): Record<string, unknown> {
   /*
@@ -108,11 +113,10 @@ export function getControlsState(
     formData.viz_type || state.common?.conf.DEFAULT_VIZ_TYPE || VizType.Table;
 
   handleDeprecatedControls(formData);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const controlsState = getAllControlsState(
     vizType,
     state.datasource.type as DatasourceType,
-    state as any,
+    state as Partial<ControlPanelState>,
     formData,
   );
 
@@ -141,8 +145,9 @@ export function applyDefaultFormData(
     null,
     cleanedFormData,
   );
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const controlFormData = getFormDataFromControls(controlsState as any);
+  const controlFormData = getFormDataFromControls(
+    controlsState as ControlStateMapping,
+  );
 
   const formData: Record<string, unknown> = {};
   Object.keys(controlsState)
@@ -158,17 +163,19 @@ export function applyDefaultFormData(
   return formData;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const defaultControls: Record<string, any> = { ...controls };
-Object.keys(controls).forEach(f => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  defaultControls[f].value = (controls as any)[f].default;
-});
+const defaultControls: ControlStateMapping = Object.fromEntries(
+  Object.entries(controls).map(([key, config]) => [
+    key,
+    {
+      ...config,
+      value: (config as BaseControlConfig).default,
+    },
+  ]),
+) as ControlStateMapping;
 
 const defaultState = {
   controls: defaultControls,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  form_data: getFormDataFromControls(defaultControls as any),
+  form_data: getFormDataFromControls(defaultControls),
 };
 
 export { defaultControls, defaultState };

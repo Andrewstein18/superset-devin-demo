@@ -168,7 +168,7 @@ export function getControlState(
 export function getAllControlsState(
   vizType: string,
   datasourceType: DatasourceType,
-  state: ControlPanelState | null,
+  state: Partial<ControlPanelState> | null,
   formData: QueryFormData,
 ) {
   const controlsState: Record<string, ControlState<any> | null> = {};
