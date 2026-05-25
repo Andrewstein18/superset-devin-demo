@@ -116,7 +116,7 @@ def load_chart_data_into_cache(
                 errors = [dataclasses.asdict(error) for error in ex.errors]
             else:
                 # Fallback for non-Superset exceptions
-                error = str(ex.message if hasattr(ex, "message") else ex)
+                error = str(ex)
                 errors = [{"message": error}]
             async_query_manager.update_job(
                 job_metadata, async_query_manager.STATUS_ERROR, errors=errors
@@ -189,7 +189,7 @@ def load_explore_json_into_cache(  # pylint: disable=too-many-locals
             elif isinstance(ex, SupersetErrorsException):
                 errors = [dataclasses.asdict(error) for error in ex.errors]  # type: ignore
             else:
-                error = ex.message if hasattr(ex, "message") else str(ex)
+                error = str(ex)
                 errors = [error]  # type: ignore
 
             async_query_manager.update_job(
