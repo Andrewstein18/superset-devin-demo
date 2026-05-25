@@ -71,121 +71,116 @@ const createProps = (overrides = {}) => ({
   ...overrides,
 });
 
-// eslint-disable-next-line no-restricted-globals -- TODO: Migrate from describe blocks
-describe('ChartContainer', () => {
-  jest.setTimeout(10000);
+jest.setTimeout(10000);
 
-  test('renders when vizType is line', () => {
-    const props = createProps();
-    expect(isValidElement(<ChartContainer {...props} />)).toBe(true);
+test('ChartContainer renders when vizType is line', () => {
+  const props = createProps();
+  expect(isValidElement(<ChartContainer {...props} />)).toBe(true);
+});
+
+test('ChartContainer renders with alert banner', async () => {
+  const props = createProps({
+    chartIsStale: true,
+    chart: { chartStatus: 'rendered', queriesResponse: [{}] },
   });
+  getChartMetadataRegistry().registerValue(
+    VizType.Histogram,
+    new ChartMetadata({
+      name: 'fake table',
+      thumbnail: '.png',
+      useLegacyApi: false,
+    }),
+  );
+  render(<ChartContainer {...props} />, { useRedux: true });
+  expect(await screen.findByText('Your chart is not up to date')).toBeVisible();
+});
 
-  test('renders with alert banner', async () => {
-    const props = createProps({
-      chartIsStale: true,
-      chart: { chartStatus: 'rendered', queriesResponse: [{}] },
-    });
-    getChartMetadataRegistry().registerValue(
-      VizType.Histogram,
-      new ChartMetadata({
-        name: 'fake table',
-        thumbnail: '.png',
-        useLegacyApi: false,
-      }),
-    );
-    render(<ChartContainer {...props} />, { useRedux: true });
-    expect(
-      await screen.findByText('Your chart is not up to date'),
-    ).toBeVisible();
+test('ChartContainer doesnt render alert banner when no changes in control panel were made (chart is not stale)', async () => {
+  const props = createProps({
+    chartIsStale: false,
   });
+  render(<ChartContainer {...props} />, { useRedux: true });
+  expect(await screen.findByText(/cached/i)).toBeInTheDocument();
+  expect(
+    screen.queryByText('Your chart is not up to date'),
+  ).not.toBeInTheDocument();
+});
 
-  test('doesnt render alert banner when no changes in control panel were made (chart is not stale)', async () => {
-    const props = createProps({
-      chartIsStale: false,
-    });
-    render(<ChartContainer {...props} />, { useRedux: true });
-    expect(await screen.findByText(/cached/i)).toBeInTheDocument();
-    expect(
-      screen.queryByText('Your chart is not up to date'),
-    ).not.toBeInTheDocument();
+test('ChartContainer doesnt render alert banner when chart not created yet (no queries response)', async () => {
+  const props = createProps({
+    chartIsStale: true,
+    chart: { queriesResponse: [] },
   });
+  render(<ChartContainer {...props} />, { useRedux: true });
+  expect(await screen.findByRole('timer')).toBeInTheDocument();
+  expect(
+    screen.queryByText('Your chart is not up to date'),
+  ).not.toBeInTheDocument();
+});
 
-  test('doesnt render alert banner when chart not created yet (no queries response)', async () => {
-    const props = createProps({
-      chartIsStale: true,
-      chart: { queriesResponse: [] },
-    });
-    render(<ChartContainer {...props} />, { useRedux: true });
-    expect(await screen.findByRole('timer')).toBeInTheDocument();
-    expect(
-      screen.queryByText('Your chart is not up to date'),
-    ).not.toBeInTheDocument();
+test('ChartContainer renders prompt to fill required controls when required control removed', async () => {
+  const props = createProps({
+    chartIsStale: true,
+    chart: { chartStatus: 'rendered', queriesResponse: [{}] },
+    errorMessage: 'error',
   });
+  render(<ChartContainer {...props} />, { useRedux: true });
+  expect(
+    await screen.findByText('Required control values have been removed'),
+  ).toBeVisible();
+});
 
-  test('renders prompt to fill required controls when required control removed', async () => {
-    const props = createProps({
-      chartIsStale: true,
-      chart: { chartStatus: 'rendered', queriesResponse: [{}] },
-      errorMessage: 'error',
-    });
-    render(<ChartContainer {...props} />, { useRedux: true });
-    expect(
-      await screen.findByText('Required control values have been removed'),
-    ).toBeVisible();
+test('ChartContainer should render cached button and call expected actions', async () => {
+  const setForceQuery = jest.fn();
+  const postChartFormData = jest.fn();
+  const updateQueryFormData = jest.fn();
+  const props = createProps({
+    actions: {
+      setForceQuery,
+      postChartFormData,
+      updateQueryFormData,
+    },
   });
+  render(<ChartContainer {...props} />, { useRedux: true });
 
-  test('should render cached button and call expected actions', async () => {
-    const setForceQuery = jest.fn();
-    const postChartFormData = jest.fn();
-    const updateQueryFormData = jest.fn();
-    const props = createProps({
-      actions: {
-        setForceQuery,
-        postChartFormData,
-        updateQueryFormData,
-      },
-    });
-    render(<ChartContainer {...props} />, { useRedux: true });
+  const cached = await screen.findByText('Cached');
+  expect(cached).toBeInTheDocument();
 
-    const cached = await screen.findByText('Cached');
-    expect(cached).toBeInTheDocument();
+  userEvent.click(cached);
+  expect(setForceQuery).toHaveBeenCalledTimes(1);
+  expect(postChartFormData).toHaveBeenCalledTimes(1);
+  expect(updateQueryFormData).toHaveBeenCalledTimes(1);
+});
 
-    userEvent.click(cached);
-    expect(setForceQuery).toHaveBeenCalledTimes(1);
-    expect(postChartFormData).toHaveBeenCalledTimes(1);
-    expect(updateQueryFormData).toHaveBeenCalledTimes(1);
+test('ChartContainer should hide cached button', async () => {
+  const props = createProps({
+    chart: {
+      chartStatus: 'rendered',
+      queriesResponse: [{ is_cached: false }],
+    },
   });
+  render(<ChartContainer {...props} />, { useRedux: true });
+  expect(await screen.findByRole('timer')).toBeInTheDocument();
+  expect(screen.queryByText(/cached/i)).not.toBeInTheDocument();
+});
 
-  test('should hide cached button', async () => {
-    const props = createProps({
-      chart: {
-        chartStatus: 'rendered',
-        queriesResponse: [{ is_cached: false }],
-      },
-    });
-    render(<ChartContainer {...props} />, { useRedux: true });
-    expect(await screen.findByRole('timer')).toBeInTheDocument();
-    expect(screen.queryByText(/cached/i)).not.toBeInTheDocument();
+test('ChartContainer hides gutter when collapsing data panel', async () => {
+  const props = createProps();
+  setItem(LocalStorageKeys.IsDatapanelOpen, true);
+  const { container } = render(<ChartContainer {...props} />, {
+    useRedux: true,
   });
+  const tabpanel = screen.getByRole('tabpanel', { name: /results/i });
+  expect(
+    await within(tabpanel).findByText(/0 rows/i, undefined, {
+      timeout: 5000,
+    }),
+  ).toBeInTheDocument();
 
-  test('hides gutter when collapsing data panel', async () => {
-    const props = createProps();
-    setItem(LocalStorageKeys.IsDatapanelOpen, true);
-    const { container } = render(<ChartContainer {...props} />, {
-      useRedux: true,
-    });
-    const tabpanel = screen.getByRole('tabpanel', { name: /results/i });
-    expect(
-      await within(tabpanel).findByText(/0 rows/i, undefined, {
-        timeout: 5000,
-      }),
-    ).toBeInTheDocument();
+  const gutter = container.querySelector('.gutter');
+  expect(gutter).toBeVisible();
 
-    const gutter = container.querySelector('.gutter');
-    expect(gutter).toBeVisible();
-
-    userEvent.click(screen.getByLabelText('Collapse data panel'));
-    expect(await screen.findByRole('timer')).toBeInTheDocument();
-    expect(gutter).not.toBeVisible();
-  });
+  userEvent.click(screen.getByLabelText('Collapse data panel'));
+  expect(await screen.findByRole('timer')).toBeInTheDocument();
+  expect(gutter).not.toBeVisible();
 });

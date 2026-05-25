@@ -198,47 +198,44 @@ test('should render the columns', async () => {
   );
 });
 
-// eslint-disable-next-line no-restricted-globals -- TODO: Migrate from describe blocks
-describe('DatasourcePanel', () => {
-  beforeAll(() => {
-    jest.setTimeout(30000);
-  });
-
-  afterEach(async () => {
-    cleanup();
-    await new Promise(resolve => setTimeout(resolve, 0));
-  });
-
-  test('should search and render matching columns', async () => {
-    const { unmount } = render(
-      <ExploreContainer>
-        <DatasourcePanel {...props} />
-        <DndMetricSelect {...metricProps} />
-      </ExploreContainer>,
-      { useRedux: true, useDnd: true },
-    );
-
-    const searchInput = screen.getByPlaceholderText('Search Metrics & Columns');
-
-    await waitFor(() => {
-      expect(searchInput).toBeInTheDocument();
-    });
-
-    search(columns[0].column_name, searchInput);
-
-    await waitFor(
-      () => {
-        expect(screen.getByText(columns[0].column_name)).toBeInTheDocument();
-        expect(
-          screen.queryByText(columns[1].column_name),
-        ).not.toBeInTheDocument();
-      },
-      { timeout: 10000 },
-    );
-
-    unmount();
-  }, 15000);
+beforeAll(() => {
+  jest.setTimeout(30000);
 });
+
+afterEach(async () => {
+  cleanup();
+  await new Promise(resolve => setTimeout(resolve, 0));
+});
+
+test('DatasourcePanel should search and render matching columns', async () => {
+  const { unmount } = render(
+    <ExploreContainer>
+      <DatasourcePanel {...props} />
+      <DndMetricSelect {...metricProps} />
+    </ExploreContainer>,
+    { useRedux: true, useDnd: true },
+  );
+
+  const searchInput = screen.getByPlaceholderText('Search Metrics & Columns');
+
+  await waitFor(() => {
+    expect(searchInput).toBeInTheDocument();
+  });
+
+  search(columns[0].column_name, searchInput);
+
+  await waitFor(
+    () => {
+      expect(screen.getByText(columns[0].column_name)).toBeInTheDocument();
+      expect(
+        screen.queryByText(columns[1].column_name),
+      ).not.toBeInTheDocument();
+    },
+    { timeout: 10000 },
+  );
+
+  unmount();
+}, 15000);
 
 test('should search and render matching metrics', async () => {
   render(

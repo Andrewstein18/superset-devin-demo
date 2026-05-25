@@ -86,119 +86,116 @@ const renderPopover = (props: Partial<typeof defaultProps> = {}) =>
     },
   );
 
-// eslint-disable-next-line no-restricted-globals -- TODO: Migrate from describe blocks
-describe('AdhocFilterEditPopover', () => {
-  test('renders simple tab content by default', () => {
-    renderPopover();
+test('AdhocFilterEditPopover renders simple tab content by default', () => {
+  renderPopover();
 
-    expect(screen.getByRole('tablist')).toBeInTheDocument();
-    expect(screen.getAllByRole('tab')).toHaveLength(2);
-    // Fix: Update button count to match actual buttons (Close, Save, Resize)
-    expect(screen.getAllByRole('button')).toHaveLength(3);
-    expect(screen.getByText('Simple')).toBeInTheDocument();
+  expect(screen.getByRole('tablist')).toBeInTheDocument();
+  expect(screen.getAllByRole('tab')).toHaveLength(2);
+  // Fix: Update button count to match actual buttons (Close, Save, Resize)
+  expect(screen.getAllByRole('button')).toHaveLength(3);
+  expect(screen.getByText('Simple')).toBeInTheDocument();
+});
+
+test('AdhocFilterEditPopover renders sql tab content when the adhoc filter expressionType is sql', () => {
+  renderPopover({ adhocFilter: sqlAdhocFilter });
+
+  expect(screen.getByRole('tablist')).toBeInTheDocument();
+  expect(screen.getByText('Custom SQL')).toBeInTheDocument();
+  expect(screen.getByRole('tab', { name: /custom sql/i })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+});
+
+test('AdhocFilterEditPopover renders error message when filter is faulty', () => {
+  renderPopover({ adhocFilter: faultyAdhocFilter });
+
+  expect(screen.getByRole('tablist')).toBeInTheDocument();
+  expect(screen.getAllByRole('tab')).toHaveLength(2);
+  // Error message is not present in the DOM, let's check for error state instead
+  expect(
+    screen.getByTestId('adhoc-filter-edit-popover-save-button'),
+  ).toBeDisabled();
+});
+
+/* oxlint-disable-next-line jest/no-disabled-tests */
+test.skip('updates the filter when changes are made', async () => {
+  const onChange = jest.fn();
+  renderPopover({
+    onChange,
+    adhocFilter: sqlAdhocFilter,
   });
 
-  test('renders sql tab content when the adhoc filter expressionType is sql', () => {
-    renderPopover({ adhocFilter: sqlAdhocFilter });
+  // Switch to SQL tab
+  await userEvent.click(screen.getByRole('tab', { name: /custom sql/i }));
 
-    expect(screen.getByRole('tablist')).toBeInTheDocument();
-    expect(screen.getByText('Custom SQL')).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /custom sql/i })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
-  });
+  // Find and update the SQL editor
+  const sqlInput = screen.getByTestId('sql-input');
+  fireEvent.change(sqlInput, { target: { value: 'COUNT(*) > 0' } });
 
-  test('renders error message when filter is faulty', () => {
-    renderPopover({ adhocFilter: faultyAdhocFilter });
+  // Wait for validation to complete
+  await screen.findByRole('button', { name: /save/i });
 
-    expect(screen.getByRole('tablist')).toBeInTheDocument();
-    expect(screen.getAllByRole('tab')).toHaveLength(2);
-    // Error message is not present in the DOM, let's check for error state instead
-    expect(
-      screen.getByTestId('adhoc-filter-edit-popover-save-button'),
-    ).toBeDisabled();
-  });
+  // Click save button
+  const saveButton = screen.getByRole('button', { name: /save/i });
+  await userEvent.click(saveButton);
 
-  /* oxlint-disable-next-line jest/no-disabled-tests */
-  test.skip('updates the filter when changes are made', async () => {
-    const onChange = jest.fn();
-    renderPopover({
-      onChange,
-      adhocFilter: sqlAdhocFilter,
-    });
+  expect(onChange).toHaveBeenCalledWith(
+    expect.objectContaining({
+      sqlExpression: 'COUNT(*) > 0',
+      expressionType: ExpressionTypes.Sql,
+      clause: Clauses.Where,
+    }),
+  );
+});
 
-    // Switch to SQL tab
-    await userEvent.click(screen.getByRole('tab', { name: /custom sql/i }));
+test('AdhocFilterEditPopover enables save button when valid changes are made', async () => {
+  renderPopover({ adhocFilter: simpleAdhocFilter });
 
-    // Find and update the SQL editor
-    const sqlInput = screen.getByTestId('sql-input');
-    fireEvent.change(sqlInput, { target: { value: 'COUNT(*) > 0' } });
+  // Find the subject select by its test id
+  const subjectSelect = screen.getByTestId('select-element');
+  await userEvent.click(subjectSelect);
 
-    // Wait for validation to complete
-    await screen.findByRole('button', { name: /save/i });
+  // Select a value from the dropdown
+  const valueOption = screen.getByText('value');
+  await userEvent.click(valueOption);
 
-    // Click save button
-    const saveButton = screen.getByRole('button', { name: /save/i });
-    await userEvent.click(saveButton);
+  // Find and update the value input
+  const valueInput = screen.getByTestId('adhoc-filter-simple-value');
+  await userEvent.clear(valueInput);
+  await userEvent.type(valueInput, '100');
 
-    expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({
-        sqlExpression: 'COUNT(*) > 0',
-        expressionType: ExpressionTypes.Sql,
-        clause: Clauses.Where,
-      }),
-    );
-  });
+  const saveButton = screen.getByRole('button', { name: /save/i });
+  expect(saveButton).toBeEnabled();
+});
 
-  test('enables save button when valid changes are made', async () => {
-    renderPopover({ adhocFilter: simpleAdhocFilter });
+test('AdhocFilterEditPopover disables save button when filter is invalid', () => {
+  renderPopover({ adhocFilter: faultyAdhocFilter });
 
-    // Find the subject select by its test id
-    const subjectSelect = screen.getByTestId('select-element');
-    await userEvent.click(subjectSelect);
+  const saveButton = screen.getByTestId(
+    'adhoc-filter-edit-popover-save-button',
+  );
+  expect(saveButton).toBeDisabled();
+});
 
-    // Select a value from the dropdown
-    const valueOption = screen.getByText('value');
-    await userEvent.click(valueOption);
+test('AdhocFilterEditPopover initiates resize when resize handle is dragged', async () => {
+  const onResize = jest.fn();
+  renderPopover({ onResize });
 
-    // Find and update the value input
-    const valueInput = screen.getByTestId('adhoc-filter-simple-value');
-    await userEvent.clear(valueInput);
-    await userEvent.type(valueInput, '100');
+  const resizeHandle = screen.getByLabelText(/resize/i);
+  fireEvent.mouseDown(resizeHandle);
+  fireEvent.mouseMove(document, { clientX: 100, clientY: 100 });
+  fireEvent.mouseUp(document);
 
-    const saveButton = screen.getByRole('button', { name: /save/i });
-    expect(saveButton).toBeEnabled();
-  });
+  expect(onResize).toHaveBeenCalled();
+});
 
-  test('disables save button when filter is invalid', () => {
-    renderPopover({ adhocFilter: faultyAdhocFilter });
+test('AdhocFilterEditPopover closes popover when close button is clicked', async () => {
+  const onClose = jest.fn();
+  renderPopover({ onClose });
 
-    const saveButton = screen.getByTestId(
-      'adhoc-filter-edit-popover-save-button',
-    );
-    expect(saveButton).toBeDisabled();
-  });
-
-  test('initiates resize when resize handle is dragged', async () => {
-    const onResize = jest.fn();
-    renderPopover({ onResize });
-
-    const resizeHandle = screen.getByLabelText(/resize/i);
-    fireEvent.mouseDown(resizeHandle);
-    fireEvent.mouseMove(document, { clientX: 100, clientY: 100 });
-    fireEvent.mouseUp(document);
-
-    expect(onResize).toHaveBeenCalled();
-  });
-
-  test('closes popover when close button is clicked', async () => {
-    const onClose = jest.fn();
-    renderPopover({ onClose });
-
-    // Use more specific selector to avoid ambiguity
-    const closeButton = screen.getByRole('button', { name: /^close$/i });
-    await userEvent.click(closeButton);
-    expect(onClose).toHaveBeenCalled();
-  });
+  // Use more specific selector to avoid ambiguity
+  const closeButton = screen.getByRole('button', { name: /^close$/i });
+  await userEvent.click(closeButton);
+  expect(onClose).toHaveBeenCalled();
 });

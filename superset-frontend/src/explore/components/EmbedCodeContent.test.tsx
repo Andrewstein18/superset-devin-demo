@@ -29,26 +29,23 @@ const mockFormData = {
   viz_type: 'table',
 };
 
-// eslint-disable-next-line no-restricted-globals -- TODO: Migrate from describe blocks
-describe('EmbedCodeButton', () => {
-  test('renders', () => {
-    expect(isValidElement(<EmbedCodeContent />)).toBe(true);
-  });
+test('EmbedCodeButton renders', () => {
+  expect(isValidElement(<EmbedCodeContent />)).toBe(true);
+});
 
-  test('returns correct embed code', async () => {
-    render(<EmbedCodeContent formData={mockFormData} />, { useRedux: true });
-    expect(await screen.findByText('iframe', { exact: false })).toBeVisible();
-    expect(await screen.findByText('/iframe', { exact: false })).toBeVisible();
-    expect(
-      await screen.findByText('width="600"', { exact: false }),
-    ).toBeVisible();
-    expect(
-      await screen.findByText('height="400"', { exact: false }),
-    ).toBeVisible();
-    expect(
-      await screen.findByText(`src="${url}?standalone=1&height=400"`, {
-        exact: false,
-      }),
-    ).toBeVisible();
-  });
+test('EmbedCodeButton returns correct embed code', async () => {
+  render(<EmbedCodeContent formData={mockFormData} />, { useRedux: true });
+  expect(await screen.findByText('iframe', { exact: false })).toBeVisible();
+  expect(await screen.findByText('/iframe', { exact: false })).toBeVisible();
+  expect(
+    await screen.findByText('width="600"', { exact: false }),
+  ).toBeVisible();
+  expect(
+    await screen.findByText('height="400"', { exact: false }),
+  ).toBeVisible();
+  expect(
+    await screen.findByText(`src="${url}?standalone=1&height=400"`, {
+      exact: false,
+    }),
+  ).toBeVisible();
 });

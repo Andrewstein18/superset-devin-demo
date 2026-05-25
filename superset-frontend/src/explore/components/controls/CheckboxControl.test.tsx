@@ -30,23 +30,20 @@ const setup = (overrides = {}) => (
   <CheckboxControl {...defaultProps} {...overrides} />
 );
 
-// eslint-disable-next-line no-restricted-globals -- TODO: Migrate from describe blocks
-describe('CheckboxControl', () => {
-  test('renders a Checkbox', () => {
-    render(setup());
+test('CheckboxControl renders a Checkbox', () => {
+  render(setup());
 
-    const checkbox = screen.getByRole('checkbox');
-    expect(checkbox).toBeInTheDocument();
-    expect(checkbox).not.toBeChecked();
+  const checkbox = screen.getByRole('checkbox');
+  expect(checkbox).toBeInTheDocument();
+  expect(checkbox).not.toBeChecked();
+});
+
+test('CheckboxControl Checks the box when the label is clicked', () => {
+  render(setup());
+  const label = screen.getByRole('button', {
+    name: /checkbox label/i,
   });
 
-  test('Checks the box when the label is clicked', () => {
-    render(setup());
-    const label = screen.getByRole('button', {
-      name: /checkbox label/i,
-    });
-
-    userEvent.click(label);
-    expect(defaultProps.onChange).toHaveBeenCalled();
-  });
+  userEvent.click(label);
+  expect(defaultProps.onChange).toHaveBeenCalled();
 });

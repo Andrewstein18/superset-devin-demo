@@ -53,185 +53,182 @@ const renderComponent = (
     </ColorBreakpointPopoverTrigger>,
   );
 
-// eslint-disable-next-line no-restricted-globals -- TODO: Migrate from describe blocks
-describe('ColorBreakpointPopoverTrigger', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+beforeEach(() => {
+  jest.clearAllMocks();
+});
 
-  test('should render', () => {
-    const { container } = renderComponent();
-    expect(container).toBeInTheDocument();
-  });
+test('ColorBreakpointPopoverTrigger should render', () => {
+  const { container } = renderComponent();
+  expect(container).toBeInTheDocument();
+});
 
-  test('should render children', () => {
-    renderComponent();
-    expect(screen.getByText('Click to add new breakpoint')).toBeInTheDocument();
-  });
+test('ColorBreakpointPopoverTrigger should render children', () => {
+  renderComponent();
+  expect(screen.getByText('Click to add new breakpoint')).toBeInTheDocument();
+});
 
-  test('should render the popover on click when uncontrolled', async () => {
-    renderComponent();
+test('ColorBreakpointPopoverTrigger should render the popover on click when uncontrolled', async () => {
+  renderComponent();
 
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
-    const triggerButton = screen.getByText('Click to add new breakpoint');
-    userEvent.click(triggerButton);
+  const triggerButton = screen.getByText('Click to add new breakpoint');
+  userEvent.click(triggerButton);
 
-    expect(screen.queryByRole('dialog')).toBeInTheDocument();
-  });
+  expect(screen.queryByRole('dialog')).toBeInTheDocument();
+});
 
-  test('should be visible when controlled and visible is true', async () => {
-    const controlledProps = {
-      isControlled: true,
-      visible: true,
-      toggleVisibility: jest.fn(),
-    };
+test('ColorBreakpointPopoverTrigger should be visible when controlled and visible is true', async () => {
+  const controlledProps = {
+    isControlled: true,
+    visible: true,
+    toggleVisibility: jest.fn(),
+  };
 
-    renderComponent(controlledProps);
+  renderComponent(controlledProps);
 
-    expect(await screen.findByRole('dialog')).toBeInTheDocument();
-  });
+  expect(await screen.findByRole('dialog')).toBeInTheDocument();
+});
 
-  test('should NOT be visible when controlled and visible is false', () => {
-    const controlledProps = {
-      isControlled: true,
-      visible: false,
-      toggleVisibility: jest.fn(),
-    };
+test('ColorBreakpointPopoverTrigger should NOT be visible when controlled and visible is false', () => {
+  const controlledProps = {
+    isControlled: true,
+    visible: false,
+    toggleVisibility: jest.fn(),
+  };
 
-    renderComponent(controlledProps);
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-  });
+  renderComponent(controlledProps);
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+});
 
-  test('should call toggleVisibility when controlled and popover state changes', async () => {
-    const toggleVisibility = jest.fn();
-    const controlledProps = {
-      isControlled: true,
-      visible: false,
-      toggleVisibility,
-    };
+test('ColorBreakpointPopoverTrigger should call toggleVisibility when controlled and popover state changes', async () => {
+  const toggleVisibility = jest.fn();
+  const controlledProps = {
+    isControlled: true,
+    visible: false,
+    toggleVisibility,
+  };
 
-    renderComponent(controlledProps);
+  renderComponent(controlledProps);
 
-    const triggerButton = screen.getByText('Click to add new breakpoint');
-    await userEvent.click(triggerButton);
+  const triggerButton = screen.getByText('Click to add new breakpoint');
+  await userEvent.click(triggerButton);
 
-    expect(toggleVisibility).toHaveBeenCalledWith(true);
-  });
+  expect(toggleVisibility).toHaveBeenCalledWith(true);
+});
 
-  test('should render popover content with form elements', async () => {
-    renderComponent();
+test('ColorBreakpointPopoverTrigger should render popover content with form elements', async () => {
+  renderComponent();
 
-    const triggerButton = screen.getByText('Click to add new breakpoint');
-    userEvent.click(triggerButton);
+  const triggerButton = screen.getByText('Click to add new breakpoint');
+  userEvent.click(triggerButton);
 
-    expect(screen.getByText('Color for breakpoint')).toBeInTheDocument();
-    expect(screen.getByText('Min value')).toBeInTheDocument();
-    expect(screen.getByText('Max value')).toBeInTheDocument();
-  });
+  expect(screen.getByText('Color for breakpoint')).toBeInTheDocument();
+  expect(screen.getByText('Min value')).toBeInTheDocument();
+  expect(screen.getByText('Max value')).toBeInTheDocument();
+});
 
-  test('should close popover when save is called', async () => {
-    renderComponent({ value: mockEmptyBreakpoint });
+test('ColorBreakpointPopoverTrigger should close popover when save is called', async () => {
+  renderComponent({ value: mockEmptyBreakpoint });
 
-    const triggerButton = screen.getByText('Click to add new breakpoint');
-    userEvent.click(triggerButton);
+  const triggerButton = screen.getByText('Click to add new breakpoint');
+  userEvent.click(triggerButton);
 
-    const minInput = screen.getAllByRole('spinbutton')[0];
-    const maxInput = screen.getAllByRole('spinbutton')[1];
+  const minInput = screen.getAllByRole('spinbutton')[0];
+  const maxInput = screen.getAllByRole('spinbutton')[1];
 
-    userEvent.type(minInput, '10');
-    userEvent.type(maxInput, '90');
+  userEvent.type(minInput, '10');
+  userEvent.type(maxInput, '90');
 
-    const saveButton = screen.getByTestId('save-button');
+  const saveButton = screen.getByTestId('save-button');
 
-    expect(saveButton).toBeEnabled();
-    userEvent.click(saveButton);
+  expect(saveButton).toBeEnabled();
+  userEvent.click(saveButton);
 
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-  });
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+});
 
-  test('should close popover when close button is clicked', async () => {
-    renderComponent();
+test('ColorBreakpointPopoverTrigger should close popover when close button is clicked', async () => {
+  renderComponent();
 
-    const triggerButton = screen.getByText('Click to add new breakpoint');
-    userEvent.click(triggerButton);
+  const triggerButton = screen.getByText('Click to add new breakpoint');
+  userEvent.click(triggerButton);
 
-    const closeButton = screen.getByTestId('close-button');
-    userEvent.click(closeButton);
+  const closeButton = screen.getByTestId('close-button');
+  userEvent.click(closeButton);
 
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-  });
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+});
 
-  test('should handle undefined value prop', async () => {
-    renderComponent({ value: undefined });
+test('ColorBreakpointPopoverTrigger should handle undefined value prop', async () => {
+  renderComponent({ value: undefined });
 
-    const triggerButton = screen.getByText('Click to add new breakpoint');
-    userEvent.click(triggerButton);
+  const triggerButton = screen.getByText('Click to add new breakpoint');
+  userEvent.click(triggerButton);
 
-    expect(screen.queryByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByText('Color for breakpoint')).toBeInTheDocument();
-  });
+  expect(screen.queryByRole('dialog')).toBeInTheDocument();
+  expect(screen.getByText('Color for breakpoint')).toBeInTheDocument();
+});
 
-  test('should handle popover open state changes correctly', async () => {
-    renderComponent();
+test('ColorBreakpointPopoverTrigger should handle popover open state changes correctly', async () => {
+  renderComponent();
 
-    const triggerButton = screen.getByText('Click to add new breakpoint');
+  const triggerButton = screen.getByText('Click to add new breakpoint');
 
-    userEvent.click(triggerButton);
-    expect(screen.queryByRole('dialog')).toBeInTheDocument();
+  userEvent.click(triggerButton);
+  expect(screen.queryByRole('dialog')).toBeInTheDocument();
 
-    userEvent.click(triggerButton);
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-  });
+  userEvent.click(triggerButton);
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+});
 
-  test('should maintain controlled state when toggleVisibility is provided', async () => {
-    const toggleVisibility = jest.fn();
-    const controlledProps = {
-      isControlled: true,
-      visible: true,
-      toggleVisibility,
-    };
+test('ColorBreakpointPopoverTrigger should maintain controlled state when toggleVisibility is provided', async () => {
+  const toggleVisibility = jest.fn();
+  const controlledProps = {
+    isControlled: true,
+    visible: true,
+    toggleVisibility,
+  };
 
-    renderComponent(controlledProps);
+  renderComponent(controlledProps);
 
-    expect(screen.queryByRole('dialog')).toBeInTheDocument();
+  expect(screen.queryByRole('dialog')).toBeInTheDocument();
 
-    const closeButton = screen.getByTestId('close-button');
-    userEvent.click(closeButton);
+  const closeButton = screen.getByTestId('close-button');
+  userEvent.click(closeButton);
 
-    expect(toggleVisibility).toHaveBeenCalledWith(false);
-  });
+  expect(toggleVisibility).toHaveBeenCalledWith(false);
+});
 
-  test('should pass colorBreakpoints to popover content', async () => {
-    const colorBreakpoints = [
-      { id: 0, color: { r: 255, g: 0, b: 0, a: 1 }, minValue: 0, maxValue: 50 },
-      {
-        id: 1,
-        color: { r: 0, g: 255, b: 0, a: 1 },
-        minValue: 50,
-        maxValue: 100,
-      },
-    ];
+test('ColorBreakpointPopoverTrigger should pass colorBreakpoints to popover content', async () => {
+  const colorBreakpoints = [
+    { id: 0, color: { r: 255, g: 0, b: 0, a: 1 }, minValue: 0, maxValue: 50 },
+    {
+      id: 1,
+      color: { r: 0, g: 255, b: 0, a: 1 },
+      minValue: 50,
+      maxValue: 100,
+    },
+  ];
 
-    renderComponent({ colorBreakpoints });
+  renderComponent({ colorBreakpoints });
 
-    const triggerButton = screen.getByText('Click to add new breakpoint');
-    userEvent.click(triggerButton);
+  const triggerButton = screen.getByText('Click to add new breakpoint');
+  userEvent.click(triggerButton);
 
-    expect(screen.queryByRole('dialog')).toBeInTheDocument();
-  });
+  expect(screen.queryByRole('dialog')).toBeInTheDocument();
+});
 
-  test('should handle destroyOnHidden prop', async () => {
-    renderComponent();
+test('ColorBreakpointPopoverTrigger should handle destroyOnHidden prop', async () => {
+  renderComponent();
 
-    const triggerButton = screen.getByText('Click to add new breakpoint');
-    userEvent.click(triggerButton);
+  const triggerButton = screen.getByText('Click to add new breakpoint');
+  userEvent.click(triggerButton);
 
-    expect(screen.queryByRole('dialog')).toBeInTheDocument();
+  expect(screen.queryByRole('dialog')).toBeInTheDocument();
 
-    const closeButton = screen.getByTestId('close-button');
-    userEvent.click(closeButton);
+  const closeButton = screen.getByTestId('close-button');
+  userEvent.click(closeButton);
 
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-  });
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });

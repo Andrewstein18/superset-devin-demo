@@ -74,83 +74,80 @@ const renderComponent = (props: Partial<TestProps> = {}) =>
     },
   );
 
-// eslint-disable-next-line no-restricted-globals -- TODO: Migrate from describe blocks
-describe('AdhocFilterControl', () => {
-  test('should render with default props', () => {
-    renderComponent();
-    expect(screen.getByText('Add filter')).toBeInTheDocument();
-    expect(screen.getByTestId('adhoc-filter-control')).toBeInTheDocument();
+test('AdhocFilterControl should render with default props', () => {
+  renderComponent();
+  expect(screen.getByText('Add filter')).toBeInTheDocument();
+  expect(screen.getByTestId('adhoc-filter-control')).toBeInTheDocument();
+});
+
+test('AdhocFilterControl should render existing filters', () => {
+  const existingFilter = new AdhocFilter({
+    expressionType: ExpressionTypes.Simple,
+    subject: 'column1',
+    operator: '==',
+    comparator: 'test',
+    clause: Clauses.Where,
   });
 
-  test('should render existing filters', () => {
-    const existingFilter = new AdhocFilter({
-      expressionType: ExpressionTypes.Simple,
-      subject: 'column1',
-      operator: '==',
-      comparator: 'test',
-      clause: Clauses.Where,
+  renderComponent({ value: [existingFilter] });
+  expect(screen.getByText("column1 = 'test'")).toBeInTheDocument();
+});
+
+test('AdhocFilterControl should call onChange when removing a filter', async () => {
+  const existingFilter = new AdhocFilter({
+    expressionType: ExpressionTypes.Simple,
+    subject: 'column1',
+    operator: '==',
+    comparator: 'test',
+    clause: Clauses.Where,
+  });
+  const onChange = jest.fn();
+
+  renderComponent({ value: [existingFilter], onChange });
+
+  const removeButton = screen.getByTestId('remove-control-button');
+  await userEvent.click(removeButton);
+
+  expect(onChange).toHaveBeenCalledWith([]);
+});
+
+test('AdhocFilterControl should show add filter button when no filters exist', () => {
+  renderComponent();
+  const addButton = screen.getByTestId('add-filter-button');
+  expect(addButton).toBeInTheDocument();
+});
+
+test('AdhocFilterControl should handle partition column data', async () => {
+  const mockPartitionColumn = 'date_column';
+  const mockResponse = {
+    partitions: {
+      cols: [mockPartitionColumn],
+    },
+  };
+
+  const createMockResponse = () => {
+    const response = new Response(JSON.stringify(mockResponse), {
+      status: 200,
+      statusText: 'OK',
+      headers: new Headers({
+        'Content-Type': 'application/json',
+      }),
     });
 
-    renderComponent({ value: [existingFilter] });
-    expect(screen.getByText("column1 = 'test'")).toBeInTheDocument();
-  });
+    jest
+      .spyOn(response, 'json')
+      .mockImplementation(() => Promise.resolve(mockResponse));
+    return response;
+  };
 
-  test('should call onChange when removing a filter', async () => {
-    const existingFilter = new AdhocFilter({
-      expressionType: ExpressionTypes.Simple,
-      subject: 'column1',
-      operator: '==',
-      comparator: 'test',
-      clause: Clauses.Where,
-    });
-    const onChange = jest.fn();
+  global.fetch = jest
+    .fn()
+    .mockImplementation(() => Promise.resolve(createMockResponse()));
 
-    renderComponent({ value: [existingFilter], onChange });
+  renderComponent();
 
-    const removeButton = screen.getByTestId('remove-control-button');
-    await userEvent.click(removeButton);
+  await screen.findByTestId('adhoc-filter-control');
 
-    expect(onChange).toHaveBeenCalledWith([]);
-  });
-
-  test('should show add filter button when no filters exist', () => {
-    renderComponent();
-    const addButton = screen.getByTestId('add-filter-button');
-    expect(addButton).toBeInTheDocument();
-  });
-
-  test('should handle partition column data', async () => {
-    const mockPartitionColumn = 'date_column';
-    const mockResponse = {
-      partitions: {
-        cols: [mockPartitionColumn],
-      },
-    };
-
-    const createMockResponse = () => {
-      const response = new Response(JSON.stringify(mockResponse), {
-        status: 200,
-        statusText: 'OK',
-        headers: new Headers({
-          'Content-Type': 'application/json',
-        }),
-      });
-
-      jest
-        .spyOn(response, 'json')
-        .mockImplementation(() => Promise.resolve(mockResponse));
-      return response;
-    };
-
-    global.fetch = jest
-      .fn()
-      .mockImplementation(() => Promise.resolve(createMockResponse()));
-
-    renderComponent();
-
-    await screen.findByTestId('adhoc-filter-control');
-
-    const component = screen.getByTestId('adhoc-filter-control');
-    expect(component).toBeInTheDocument();
-  });
+  const component = screen.getByTestId('adhoc-filter-control');
+  expect(component).toBeInTheDocument();
 });

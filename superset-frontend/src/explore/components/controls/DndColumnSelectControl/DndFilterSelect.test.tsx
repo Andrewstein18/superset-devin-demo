@@ -321,108 +321,105 @@ test('onChange is not called when close is clicked and canDelete is string, warn
   expect(await screen.findByText('Test warning')).toBeInTheDocument();
 });
 
-// eslint-disable-next-line no-restricted-globals -- TODO: Migrate from describe blocks
-describe('when disallow_adhoc_metrics is set', () => {
-  test('can drop a column type from the simple column selection', () => {
-    const adhocMetric = new AdhocMetric({
-      expression: 'AVG(birth_names.num)',
-      metric_name: 'avg__num',
-    });
-    const { getByTestId } = render(
-      <>
-        <DatasourcePanelDragOption
-          value={{ column_name: 'column_b' }}
-          type={DndItemType.Column}
-        />
-        {setup({
-          formData: {
-            ...baseFormData,
-            metrics: [adhocMetric as unknown as QueryFormMetric],
-          },
-          datasource: {
-            ...PLACEHOLDER_DATASOURCE,
-            extra: '{ "disallow_adhoc_metrics": true }',
-          },
-          columns: [{ column_name: 'column_a' }, { column_name: 'column_b' }],
-        })}
-      </>,
-      {
-        useDnd: true,
-        store,
-      },
-    );
-
-    const acceptableColumn = getByTestId('DatasourcePanelDragOption');
-    const currentMetric = getByTestId('dnd-labels-container');
-
-    fireEvent.dragStart(acceptableColumn);
-    fireEvent.dragOver(currentMetric);
-    fireEvent.drop(currentMetric);
-
-    const filterConfigPopup = screen.getByTestId('filter-edit-popover');
-    expect(within(filterConfigPopup).getByText('column_b')).toBeInTheDocument();
+test('when disallow_adhoc_metrics is set can drop a column type from the simple column selection', () => {
+  const adhocMetric = new AdhocMetric({
+    expression: 'AVG(birth_names.num)',
+    metric_name: 'avg__num',
   });
+  const { getByTestId } = render(
+    <>
+      <DatasourcePanelDragOption
+        value={{ column_name: 'column_b' }}
+        type={DndItemType.Column}
+      />
+      {setup({
+        formData: {
+          ...baseFormData,
+          metrics: [adhocMetric as unknown as QueryFormMetric],
+        },
+        datasource: {
+          ...PLACEHOLDER_DATASOURCE,
+          extra: '{ "disallow_adhoc_metrics": true }',
+        },
+        columns: [{ column_name: 'column_a' }, { column_name: 'column_b' }],
+      })}
+    </>,
+    {
+      useDnd: true,
+      store,
+    },
+  );
 
-  test('cannot drop any other types of selections apart from simple column selection', () => {
-    const adhocMetric = new AdhocMetric({
-      expression: 'AVG(birth_names.num)',
-      metric_name: 'avg__num',
-    });
-    const { getByTestId, getAllByTestId } = render(
-      <>
-        <DatasourcePanelDragOption
-          value={{ column_name: 'column_c' }}
-          type={DndItemType.Column}
-        />
-        <DatasourcePanelDragOption
-          value={{ metric_name: 'metric_a', uuid: '1' }}
-          type={DndItemType.Metric}
-        />
-        <DatasourcePanelDragOption
-          value={{ metric_name: 'avg__num', uuid: '2' }}
-          type={DndItemType.AdhocMetricOption}
-        />
-        {setup({
-          formData: {
-            ...baseFormData,
-            metrics: [adhocMetric as unknown as QueryFormMetric],
-          },
-          datasource: {
-            ...PLACEHOLDER_DATASOURCE,
-            extra: '{ "disallow_adhoc_metrics": true }',
-          },
-          columns: [{ column_name: 'column_a' }, { column_name: 'column_c' }],
-        })}
-      </>,
-      {
-        useDnd: true,
-        store,
-      },
-    );
+  const acceptableColumn = getByTestId('DatasourcePanelDragOption');
+  const currentMetric = getByTestId('dnd-labels-container');
 
-    const selections = getAllByTestId('DatasourcePanelDragOption');
-    const acceptableColumn = selections[0];
-    const unacceptableMetric = selections[1];
-    const unacceptableType = selections[2];
-    const currentMetric = getByTestId('dnd-labels-container');
+  fireEvent.dragStart(acceptableColumn);
+  fireEvent.dragOver(currentMetric);
+  fireEvent.drop(currentMetric);
 
-    fireEvent.dragStart(unacceptableMetric);
-    fireEvent.dragOver(currentMetric);
-    fireEvent.drop(currentMetric);
+  const filterConfigPopup = screen.getByTestId('filter-edit-popover');
+  expect(within(filterConfigPopup).getByText('column_b')).toBeInTheDocument();
+});
 
-    expect(screen.queryByTestId('filter-edit-popover')).not.toBeInTheDocument();
-
-    fireEvent.dragStart(unacceptableType);
-    fireEvent.dragOver(currentMetric);
-    fireEvent.drop(currentMetric);
-
-    expect(screen.queryByTestId('filter-edit-popover')).not.toBeInTheDocument();
-
-    fireEvent.dragStart(acceptableColumn);
-    fireEvent.dragOver(currentMetric);
-    fireEvent.drop(currentMetric);
-
-    const filterConfigPopup = screen.getByTestId('filter-edit-popover');
-    expect(within(filterConfigPopup).getByText('column_c')).toBeInTheDocument();
+test('when disallow_adhoc_metrics is set cannot drop any other types of selections apart from simple column selection', () => {
+  const adhocMetric = new AdhocMetric({
+    expression: 'AVG(birth_names.num)',
+    metric_name: 'avg__num',
   });
+  const { getByTestId, getAllByTestId } = render(
+    <>
+      <DatasourcePanelDragOption
+        value={{ column_name: 'column_c' }}
+        type={DndItemType.Column}
+      />
+      <DatasourcePanelDragOption
+        value={{ metric_name: 'metric_a', uuid: '1' }}
+        type={DndItemType.Metric}
+      />
+      <DatasourcePanelDragOption
+        value={{ metric_name: 'avg__num', uuid: '2' }}
+        type={DndItemType.AdhocMetricOption}
+      />
+      {setup({
+        formData: {
+          ...baseFormData,
+          metrics: [adhocMetric as unknown as QueryFormMetric],
+        },
+        datasource: {
+          ...PLACEHOLDER_DATASOURCE,
+          extra: '{ "disallow_adhoc_metrics": true }',
+        },
+        columns: [{ column_name: 'column_a' }, { column_name: 'column_c' }],
+      })}
+    </>,
+    {
+      useDnd: true,
+      store,
+    },
+  );
+
+  const selections = getAllByTestId('DatasourcePanelDragOption');
+  const acceptableColumn = selections[0];
+  const unacceptableMetric = selections[1];
+  const unacceptableType = selections[2];
+  const currentMetric = getByTestId('dnd-labels-container');
+
+  fireEvent.dragStart(unacceptableMetric);
+  fireEvent.dragOver(currentMetric);
+  fireEvent.drop(currentMetric);
+
+  expect(screen.queryByTestId('filter-edit-popover')).not.toBeInTheDocument();
+
+  fireEvent.dragStart(unacceptableType);
+  fireEvent.dragOver(currentMetric);
+  fireEvent.drop(currentMetric);
+
+  expect(screen.queryByTestId('filter-edit-popover')).not.toBeInTheDocument();
+
+  fireEvent.dragStart(acceptableColumn);
+  fireEvent.dragOver(currentMetric);
+  fireEvent.drop(currentMetric);
+
+  const filterConfigPopup = screen.getByTestId('filter-edit-popover');
+  expect(within(filterConfigPopup).getByText('column_c')).toBeInTheDocument();
 });
