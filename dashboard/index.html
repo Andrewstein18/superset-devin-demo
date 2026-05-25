@@ -655,6 +655,10 @@ under the License.
     return div.innerHTML;
   }
 
+  function isDevinPR(pr) {
+    return /<!--\s*devin-authored:\s*true\s*-->/.test(pr.body || "");
+  }
+
   // --- Issue <-> PR linking ---
   function parseLinkedIssueNum(prBody) {
     if (!prBody) return null;
@@ -966,16 +970,7 @@ under the License.
     var repo = cfg("TARGET_REPO");
     var prs = cachedPrs;
 
-    var devinPRs = prs.filter(function (pr) {
-      var body = (pr.body || "").toLowerCase();
-      var title = (pr.title || "").toLowerCase();
-      var labels = (pr.labels || []).map(function (l) { return l.name.toLowerCase(); });
-      return body.indexOf("fixes #") !== -1 ||
-        body.indexOf("devin") !== -1 ||
-        title.indexOf("devin") !== -1 ||
-        labels.indexOf("automated-fix") !== -1 ||
-        labels.indexOf("automated-cleanup") !== -1;
-    });
+    var devinPRs = prs.filter(isDevinPR);
 
     var filtered;
     if (currentPrFilter === "open") {
@@ -1045,16 +1040,7 @@ under the License.
       reviewHours: cfg("REVIEW_HOURS_PER_PR"),
     };
 
-    var devinPRs = prs.filter(function (pr) {
-      var body = (pr.body || "").toLowerCase();
-      var title = (pr.title || "").toLowerCase();
-      var labels = (pr.labels || []).map(function (l) { return l.name.toLowerCase(); });
-      return body.indexOf("fixes #") !== -1 ||
-        body.indexOf("devin") !== -1 ||
-        title.indexOf("devin") !== -1 ||
-        labels.indexOf("automated-fix") !== -1 ||
-        labels.indexOf("automated-cleanup") !== -1;
-    });
+    var devinPRs = prs.filter(isDevinPR);
 
     var merged = devinPRs.filter(function (pr) { return pr.merged_at; });
     var openPRs = devinPRs.filter(function (pr) { return pr.state === "open"; });

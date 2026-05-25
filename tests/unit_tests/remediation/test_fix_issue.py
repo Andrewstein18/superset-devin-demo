@@ -81,9 +81,6 @@ def test_fixer_spawns_session_with_fixes_reference(
         if "/comments" in url:
             return _make_urlopen_response({})
 
-        if "/issues/42" in url and method == "PATCH":
-            return _make_urlopen_response({})
-
         return _make_urlopen_response({})
 
     with patch("urllib.request.urlopen", side_effect=fake_urlopen):
@@ -107,6 +104,7 @@ def test_fixer_spawns_session_with_fixes_reference(
         )
 
         assert "Fixes #42" in rendered_prompt
+        assert "devin-authored: true" in rendered_prompt
 
         session_id = create_session(
             rendered_prompt, "Fixer: Bug in parser", "test-token"

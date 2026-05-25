@@ -17,8 +17,9 @@
 """Spawn a Devin fixer agent for a single GitHub issue.
 
 Triggered by the tech-debt-fixer workflow when an issue receives the
-trigger label. Spawns one Devin agent, waits for it to finish, then
-closes the issue.
+trigger label. Spawns one Devin agent and waits for it to finish.
+Issue closure happens when the PR merges via GitHub's native
+``Fixes #N`` mechanism.
 
 Usage:
     python scripts/tech_debt_scanner/fix_issue.py \
@@ -82,7 +83,8 @@ Title: {issue_title}
 4. Implement the fix on a new branch
 5. Open a PR that fixes this issue
    - Reference the issue: "Fixes #{issue_number}"
-   - Labels: automated-fix
+   - Apply label: automated-fix
+   - PR body MUST end with this exact line: <!-- devin-authored: true -->
 6. Keep the fix focused and minimal
 """
 
@@ -138,32 +140,6 @@ def wait_for_session(session_id: str, token: str, timeout: int = 1800) -> str:
             pass
         time.sleep(30)
     return "timeout"
-
-
-def close_issue(issue_number: int, repo: str) -> None:
-    """Close the GitHub issue after the fixer agent is done."""
-    gh_token = os.environ.get("GITHUB_TOKEN", "")
-    if not gh_token:
-        logger.warning("GITHUB_TOKEN not set — cannot close issue")
-        return
-
-    payload = json.dumps({"state": "closed"}).encode()
-    req = urllib.request.Request(  # noqa: S310
-        f"https://api.github.com/repos/{repo}/issues/{issue_number}",
-        data=payload,
-        headers={
-            "Authorization": f"Bearer {gh_token}",
-            "Accept": "application/vnd.github.v3+json",
-            "Content-Type": "application/json",
-        },
-        method="PATCH",
-    )
-    try:
-        with urllib.request.urlopen(req) as resp:  # noqa: S310
-            if resp.status == 200:
-                logger.info("Closed issue #%d", issue_number)
-    except urllib.error.HTTPError as exc:
-        logger.error("Failed to close issue #%d: %s", issue_number, exc)
 
 
 def add_comment(issue_number: int, session_id: str, repo: str) -> None:
@@ -236,13 +212,9 @@ def main() -> None:
     logger.info("Fixer finished with status: %s", status)
 
     if status in ("stopped", "finished"):
-        close_issue(args.issue_number, repo)
-        logger.info("Issue #%d closed", args.issue_number)
+        logger.info("Fixer completed — issue closes when PR merges")
     else:
-        logger.warning(
-            "Fixer did not complete successfully (status=%s) — issue left open",
-            status,
-        )
+        logger.warning("Fixer did not complete (status=%s)", status)
 
 
 if __name__ == "__main__":
