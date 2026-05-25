@@ -58,7 +58,7 @@ import pandas as pd
 import sqlalchemy as sa
 from cryptography.hazmat.backends import default_backend
 from cryptography.x509 import Certificate, load_pem_x509_certificate
-from flask import current_app as app, request
+from flask import current_app as app, g, request  # noqa: F401
 from flask_sqlalchemy import SQLAlchemy
 from pandas.api.types import infer_dtype
 from pandas.core.dtypes.common import is_numeric_dtype
