@@ -288,6 +288,27 @@ class BigQueryEngineSpec(BaseEngineSpec):  # pylint: disable=too-many-public-met
     }
 
     @classmethod
+    def process_compiled_sql(cls, sql: str) -> str:
+        """Fix string literal escaping for BigQuery.
+
+        BigQuery uses backslash escaping for single quotes inside string
+        literals, whereas standard SQL (and SQLAlchemy's default
+        ``literal_binds`` rendering) doubles apostrophes.  For example,
+        ``'Armando''s'`` is rewritten to ``'Armando\\'s'``.
+        """
+
+        def _fix_literal(match: re.Match[str]) -> str:
+            literal = match.group(0)
+            inner = literal[1:-1]
+            if "''" not in inner:
+                return literal
+            value = inner.replace("''", "'")
+            value = value.replace("\\", "\\\\").replace("'", "\\'")
+            return "'" + value + "'"
+
+        return re.sub(r"'(?:[^']*'')*[^']*'", _fix_literal, sql)
+
+    @classmethod
     def convert_dttm(
         cls, target_type: str, dttm: datetime, db_extra: dict[str, Any] | None = None
     ) -> str | None:

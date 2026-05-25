@@ -2119,6 +2119,18 @@ class BaseEngineSpec:  # pylint: disable=too-many-public-methods
         """
 
     @classmethod
+    def process_compiled_sql(cls, sql: str) -> str:
+        """Post-process SQL compiled with literal_binds=True.
+
+        Override in engine-specific subclasses to fix dialect-specific
+        escaping issues (e.g. BigQuery backslash escaping).
+
+        :param sql: SQL string produced by SQLAlchemy compilation
+        :return: Possibly modified SQL string
+        """
+        return sql
+
+    @classmethod
     def execute(  # pylint: disable=unused-argument
         cls,
         cursor: Any,

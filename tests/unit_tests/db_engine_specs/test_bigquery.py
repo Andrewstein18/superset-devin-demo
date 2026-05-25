@@ -528,3 +528,34 @@ def test_get_view_names_excludes_materialized_views() -> None:
     assert "table_type = 'VIEW'" in executed_query
     # Ensure it's not querying for materialized views
     assert "MATERIALIZED VIEW" not in executed_query
+
+
+@pytest.mark.parametrize(
+    "input_sql,expected_sql",
+    [
+        (
+            "SELECT * FROM t WHERE name IN ('Armando''s')",
+            "SELECT * FROM t WHERE name IN ('Armando\\'s')",
+        ),
+        (
+            "SELECT * FROM t WHERE name = ''",
+            "SELECT * FROM t WHERE name = ''",
+        ),
+        (
+            "SELECT * FROM t WHERE name = 'hello'",
+            "SELECT * FROM t WHERE name = 'hello'",
+        ),
+        (
+            "SELECT * FROM t WHERE name IN ('It''s a ''test''')",
+            "SELECT * FROM t WHERE name IN ('It\\'s a \\'test\\'')",
+        ),
+        (
+            "SELECT * FROM t WHERE a IN ('Armando''s') AND b != 'CANCELED'",
+            "SELECT * FROM t WHERE a IN ('Armando\\'s') AND b != 'CANCELED'",
+        ),
+    ],
+)
+def test_process_compiled_sql(input_sql: str, expected_sql: str) -> None:
+    from superset.db_engine_specs.bigquery import BigQueryEngineSpec
+
+    assert BigQueryEngineSpec.process_compiled_sql(input_sql) == expected_sql
