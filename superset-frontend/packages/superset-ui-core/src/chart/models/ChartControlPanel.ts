@@ -17,12 +17,4 @@
  * under the License.
  */
 
-import { QueryFormData } from '../..';
-
-export interface ChartControlPanel {
-  controlPanelSections?: (Record<string, unknown> | null)[];
-  controlOverrides?: Record<string, Record<string, unknown>>;
-  sectionOverrides?: Record<string, unknown>;
-  onInit?: (state: Record<string, unknown>) => void;
-  formDataOverrides?: (formData: QueryFormData) => QueryFormData;
-}
+export type ChartControlPanel = { [key: string]: any };
