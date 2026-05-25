@@ -167,11 +167,28 @@ class UploadCommand(BaseCommand):
 
         self._reader.read(self._file, self._model, self._table_name, self._schema)
 
+        # Resolve empty schema to the database's default schema so that the
+        # dataset metadata matches the actual location of the uploaded table.
+        # Without this, uploading a CSV without specifying a schema stores
+        # schema=None in the dataset record while the table lives in the
+        # default schema (e.g. "public" on PostgreSQL), allowing a duplicate
+        # dataset to be created later when the schema is explicitly provided.
+        effective_schema = self._schema
+        if not effective_schema:
+            try:
+                catalog = self._model.get_default_catalog()
+                effective_schema = self._model.get_default_schema(catalog)
+            except Exception:  # noqa: BLE001
+                logger.warning(
+                    "Unable to resolve default schema for database %s",
+                    self._model_id,
+                )
+
         sqla_table = (
             db.session.query(SqlaTable)
             .filter_by(
                 table_name=self._table_name,
-                schema=self._schema,
+                schema=effective_schema,
                 database_id=self._model_id,
             )
             .one_or_none()
@@ -182,7 +199,7 @@ class UploadCommand(BaseCommand):
                 database=self._model,
                 database_id=self._model_id,
                 owners=[get_user()],
-                schema=self._schema,
+                schema=effective_schema,
             )
             db.session.add(sqla_table)
 
