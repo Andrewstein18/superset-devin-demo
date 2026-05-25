@@ -494,12 +494,6 @@ under the License.
     </div>
   </div>
 
-  <!-- Active Devin Sessions -->
-  <div class="sessions-panel" id="sessionsPanel">
-    <h3>Active Devin Sessions</h3>
-    <div id="sessionsContent"><span class="empty-state" style="padding:16px">Loading...</span></div>
-  </div>
-
   <!-- Tables -->
   <div class="tables">
     <div class="table-section">
@@ -531,6 +525,12 @@ under the License.
       </table>
       <div class="show-all-link" id="prsShowAll" style="display:none"></div>
     </div>
+  </div>
+
+  <!-- Active Devin Sessions -->
+  <div class="sessions-panel" id="sessionsPanel">
+    <h3>Active Devin Sessions</h3>
+    <div id="sessionsContent"><span class="empty-state" style="padding:16px">Loading...</span></div>
   </div>
 </div>
 
@@ -858,8 +858,9 @@ under the License.
         });
       }
 
-      var statusLabel = s.status_enum || s.status || "unknown";
-      var dotClass = "status-dot-" + statusLabel.replace(/_/g, "-");
+      var rawStatus = s.status_enum || s.status || "unknown";
+      var statusLabel = rawStatus === "blocked" ? "ready for review" : rawStatus;
+      var dotClass = "status-dot-" + rawStatus.replace(/_/g, "-");
 
       html += '<tr>' +
         '<td><a href="' + DEVIN_UI + sid + '" target="_blank" title="' + escHtml(sid) + '">' + escHtml(shortId) + '</a></td>' +
