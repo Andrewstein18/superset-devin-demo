@@ -276,6 +276,45 @@ under the License.
   .show-all-link a { color: var(--blue); text-decoration: none; }
   .show-all-link a:hover { text-decoration: underline; }
 
+  /* Remediate button */
+  .btn-remediate {
+    padding: 3px 10px;
+    font-size: 11px;
+    border-radius: 4px;
+    border: 1px solid var(--blue);
+    background: var(--blue);
+    color: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn-remediate:hover { opacity: 0.85; }
+  .btn-remediate:disabled { opacity: 0.5; cursor: default; }
+  .devin-tagged {
+    color: var(--green);
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .devin-triggered {
+    color: var(--green);
+    font-size: 12px;
+    font-weight: 500;
+    animation: fadeTriggered 3s forwards;
+  }
+  @keyframes fadeTriggered {
+    0%, 70% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  .devin-error {
+    color: var(--red);
+    font-size: 11px;
+  }
+  .gh-token-prompt {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .gh-token-prompt a { color: var(--blue); cursor: pointer; }
+
   /* Token bar */
   .token-bar {
     background: var(--surface);
@@ -431,6 +470,12 @@ under the License.
   <div class="edit-panel" id="editPanel">
     <h3>Edit Assumptions</h3>
     <div class="edit-row">
+      <label>GitHub token (for Remediate button)</label>
+      <input type="password" id="editGhToken" placeholder="ghp_... (needs repo scope)" style="width:260px" />
+      <span style="font-size:11px;color:var(--muted)">Generate at <a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a></span>
+    </div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:12px 0">
+    <div class="edit-row">
       <label>Engineer hourly rate (USD)</label>
       <input type="number" id="editRate" value="100" min="1" />
     </div>
@@ -461,13 +506,14 @@ under the License.
       <h3>Issues</h3>
       <div class="filter-pills" id="issueFilters">
         <span class="pill active" data-filter="open" onclick="setIssueFilter('open')">Open</span>
+        <span class="pill" data-filter="untagged" onclick="setIssueFilter('untagged')">Untagged</span>
         <span class="pill" data-filter="in-progress" onclick="setIssueFilter('in-progress')">In Progress</span>
         <span class="pill" data-filter="closed" onclick="setIssueFilter('closed')">Closed</span>
         <span class="pill" data-filter="all" onclick="setIssueFilter('all')">All</span>
       </div>
       <table>
-        <thead><tr><th>Title</th><th>PR</th><th>Age</th><th>Link</th></tr></thead>
-        <tbody id="issuesTable"><tr><td colspan="4" class="empty-state">Loading...</td></tr></tbody>
+        <thead><tr><th>Title</th><th>Devin Status</th><th>PR</th><th>Age</th><th>Link</th></tr></thead>
+        <tbody id="issuesTable"><tr><td colspan="5" class="empty-state">Loading...</td></tr></tbody>
       </table>
       <div class="show-all-link" id="issuesShowAll" style="display:none"></div>
     </div>
@@ -501,10 +547,12 @@ under the License.
 
   var currentIssueFilter = "open";
   var currentPrFilter = "all";
-  var cachedIssues = [];
+  var cachedIssues = [];       // all repo issues (no label filter)
+  var cachedLabeledIssues = []; // issues with trigger label (for metrics)
   var cachedPrs = [];
   var cachedSessions = [];
   var linkMap = {};
+  var remediatedSet = {};       // optimistically tracked remediations
 
   // --- Config & localStorage ---
   function cfg(key) {
@@ -666,6 +714,22 @@ under the License.
     return page(1);
   }
 
+  var MAX_ISSUE_PAGES = 5;
+  function fetchAllRepoIssues(repo) {
+    var allIssues = [];
+    function page(p) {
+      if (p > MAX_ISSUE_PAGES) return Promise.resolve(allIssues);
+      return ghFetch(
+        "/repos/" + repo + "/issues?state=all&per_page=100&page=" + p
+      ).then(function (issues) {
+        allIssues = allIssues.concat(issues);
+        if (issues.length === 100) return page(p + 1);
+        return allIssues;
+      });
+    }
+    return page(1);
+  }
+
   // --- Devin API ---
   function devinFetchUrl() {
     var useProxy = location.protocol !== "file:" && location.hostname === "localhost";
@@ -703,6 +767,50 @@ under the License.
       p.classList.toggle("active", p.getAttribute("data-filter") === filter);
     });
     renderIssuesTable();
+  };
+
+  // --- Remediate with Devin ---
+  function hasLabel(issue, labelName) {
+    return (issue.labels || []).some(function (l) {
+      return l.name.toLowerCase() === labelName.toLowerCase();
+    });
+  }
+
+  window.remediateIssue = function (issueNumber) {
+    var ghToken = resolveGitHubToken();
+    if (!ghToken) {
+      var cell = document.getElementById("devin-status-" + issueNumber);
+      if (cell) {
+        cell.innerHTML = '<span class="gh-token-prompt">Add a GitHub token in <a onclick="toggleEdit()">settings</a> to trigger remediation</span>';
+      }
+      return;
+    }
+    var repo = cfg("TARGET_REPO");
+    var label = cfg("TRIGGER_LABEL");
+    var cell = document.getElementById("devin-status-" + issueNumber);
+    if (cell) cell.innerHTML = '<span style="color:var(--muted);font-size:12px">Triggering...</span>';
+
+    fetch(GH_API + "/repos/" + repo + "/issues/" + issueNumber + "/labels", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + ghToken,
+        Accept: "application/vnd.github.v3+json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ labels: [label] }),
+    }).then(function (r) {
+      if (!r.ok) return r.json().then(function (d) { throw new Error(d.message || "HTTP " + r.status); });
+      remediatedSet[issueNumber] = true;
+      if (cell) cell.innerHTML = '<span class="devin-triggered">&#10003; Triggered</span>';
+      setTimeout(function () {
+        if (cell) cell.innerHTML = '<span class="devin-tagged">&#10003; Tagged for Devin</span>';
+      }, 3000);
+    }).catch(function (err) {
+      if (cell) {
+        cell.innerHTML = '<button class="btn-remediate" onclick="remediateIssue(' + issueNumber + ')">Remediate with Devin</button>' +
+          '<br><span class="devin-error">' + escHtml(err.message) + '</span>';
+      }
+    });
   };
 
   window.setPrFilter = function (filter) {
@@ -771,10 +879,14 @@ under the License.
     var filtered;
     if (currentIssueFilter === "open") {
       filtered = issues.filter(function (i) { return i.state === "open"; });
+    } else if (currentIssueFilter === "untagged") {
+      filtered = issues.filter(function (i) {
+        return i.state === "open" && !hasLabel(i, label) && !remediatedSet[i.number];
+      });
     } else if (currentIssueFilter === "in-progress") {
       filtered = issues.filter(function (i) {
-        return i.state === "open" && linkMap.issueTopr[i.number] &&
-          linkMap.issueTopr[i.number].state === "open";
+        return i.state === "open" && (hasLabel(i, label) || remediatedSet[i.number]) &&
+          linkMap.issueTopr[i.number] && linkMap.issueTopr[i.number].state === "open";
       });
     } else if (currentIssueFilter === "closed") {
       filtered = issues.filter(function (i) { return i.state === "closed"; });
@@ -786,10 +898,15 @@ under the License.
     var showAll = $("issuesShowAll");
 
     if (filtered.length === 0) {
-      var msg = currentIssueFilter === "open"
-        ? 'No open issues with label "' + escHtml(label) + '"'
-        : "No issues match this filter";
-      tbody.innerHTML = '<tr><td colspan="4" class="empty-state">' + msg + '</td></tr>';
+      var msg;
+      if (currentIssueFilter === "untagged") {
+        msg = "No untagged issues &mdash; your backlog is clear";
+      } else if (currentIssueFilter === "open") {
+        msg = "No open issues";
+      } else {
+        msg = "No issues match this filter";
+      }
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">' + msg + '</td></tr>';
       showAll.style.display = "none";
       return;
     }
@@ -797,6 +914,16 @@ under the License.
     var display = filtered.slice(0, MAX_TABLE_ROWS);
     tbody.innerHTML = display.map(function (iss) {
       var stateDot = iss.state === "open" ? "state-dot-open" : "state-dot-closed";
+
+      var devinStatusCol;
+      if (iss.state !== "open") {
+        devinStatusCol = '&mdash;';
+      } else if (hasLabel(iss, label) || remediatedSet[iss.number]) {
+        devinStatusCol = '<span class="devin-tagged">&#10003; Tagged for Devin</span>';
+      } else {
+        devinStatusCol = '<button class="btn-remediate" onclick="remediateIssue(' + iss.number + ')">Remediate with Devin</button>';
+      }
+
       var pr = linkMap.issueTopr[iss.number];
       var prCol = "&mdash;";
       if (pr) {
@@ -814,6 +941,7 @@ under the License.
 
       return '<tr>' +
         '<td><span class="state-dot ' + stateDot + '"></span>' + escHtml(iss.title) + '</td>' +
+        '<td id="devin-status-' + iss.number + '">' + devinStatusCol + '</td>' +
         '<td>' + prCol + '</td>' +
         '<td>' + ageText + '</td>' +
         '<td><a href="' + iss.html_url + '" target="_blank">View</a></td>' +
@@ -821,8 +949,7 @@ under the License.
     }).join("");
 
     if (filtered.length > MAX_TABLE_ROWS) {
-      showAll.innerHTML = '<a href="https://github.com/' + repo + '/issues?q=label%3A' +
-        encodeURIComponent(label) + '" target="_blank">Show all on GitHub &rarr;</a>';
+      showAll.innerHTML = '<a href="https://github.com/' + repo + '/issues" target="_blank">Show all on GitHub &rarr;</a>';
       showAll.style.display = "block";
     } else {
       showAll.style.display = "none";
@@ -1008,21 +1135,24 @@ under the License.
     var token = resolveDevinToken().token;
 
     Promise.all([
+      fetchAllRepoIssues(repo).catch(function () { return []; }),
       fetchAllIssues(repo, label).catch(function () { return []; }),
       fetchAllPRs(repo).catch(function () { return []; }),
       fetchDevinSessions(token),
     ]).then(function (results) {
-      var issues = results[0].filter(function (i) { return !i.pull_request; });
-      var prs = results[1];
-      var sessions = results[2];
+      var allRepoIssues = results[0].filter(function (i) { return !i.pull_request; });
+      var labeledIssues = results[1].filter(function (i) { return !i.pull_request; });
+      var prs = results[2];
+      var sessions = results[3];
 
-      cachedIssues = issues;
+      cachedIssues = allRepoIssues;
+      cachedLabeledIssues = labeledIssues;
       cachedPrs = prs;
       cachedSessions = sessions;
-      linkMap = buildLinkMap(issues, prs);
+      linkMap = buildLinkMap(allRepoIssues, prs);
 
       var active = getActiveSessions(sessions);
-      renderCards(issues, prs, active);
+      renderCards(labeledIssues, prs, active);
       renderSessionsPanel(sessions);
       renderIssuesTable();
       renderPrsTable();
@@ -1055,6 +1185,8 @@ under the License.
     setCfg("ENGINEER_HOURLY_RATE", parseFloat($("editRate").value) || 100);
     setCfg("HOURS_PER_ISSUE", parseFloat($("editHours").value) || 4);
     setCfg("REVIEW_HOURS_PER_PR", parseFloat($("editReview").value) || 0.5);
+    var ghTok = $("editGhToken").value.trim();
+    if (ghTok) localStorage.setItem("githubToken", ghTok);
     $("editPanel").classList.remove("open");
     loadData();
   };
@@ -1068,6 +1200,13 @@ under the License.
 
   // --- Init ---
   initTokenUI();
+  if ($("editGhToken")) {
+    var savedGh = resolveGitHubToken();
+    if (savedGh && savedGh !== "your-github-token-here") {
+      $("editGhToken").value = "";
+      $("editGhToken").placeholder = "Token saved \u2713 (enter new to replace)";
+    }
+  }
   loadData();
   setInterval(loadData, cfg("REFRESH_INTERVAL_MS"));
   setInterval(loadSessions, 30000);
