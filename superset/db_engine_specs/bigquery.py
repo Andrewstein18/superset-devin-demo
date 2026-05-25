@@ -22,7 +22,7 @@ import re
 import urllib
 from datetime import datetime
 from re import Pattern
-from typing import Any, TYPE_CHECKING, TypedDict
+from typing import Any, Callable, TYPE_CHECKING, TypedDict
 
 import pandas as pd
 from apispec import APISpec
@@ -105,6 +105,47 @@ SYNTAX_ERROR_REGEX = re.compile(
 )
 
 ma_plugin = MarshmallowPlugin()
+
+
+class BigQueryStringType(types.TypeDecorator):
+    """Custom string type that produces correctly escaped literals for BigQuery.
+
+    The default sqlalchemy-bigquery dialect wraps strings containing apostrophes
+    in double quotes (e.g. "O'Brien"), but BigQuery interprets double-quoted
+    tokens as identifiers rather than string literals. This type ensures all
+    string literals use single quotes with backslash-escaped internal quotes
+    (e.g. 'O\\'Brien'), which BigQuery handles correctly.
+    """
+
+    impl = types.String
+    cache_ok = True
+
+    def literal_processor(self, dialect: Any) -> Callable[[str], str]:
+        def process(value: str) -> str:
+            escaped = value.replace("\\", "\\\\").replace("'", "\\'")
+            return f"'{escaped}'"
+
+        return process
+
+
+def _monkeypatch_bigquery_dialect() -> None:
+    """Patch the BigQuery dialect to use backslash escaping for string literals.
+
+    The sqlalchemy-bigquery BQString type uses Python's repr() which wraps
+    strings containing apostrophes in double quotes. BigQuery treats double-quoted
+    tokens as identifiers, causing syntax errors. This patch replaces the String
+    colspec with BigQueryStringType so that literals always use single quotes
+    with backslash escaping.
+    """
+    try:
+        from sqlalchemy_bigquery import BigQueryDialect
+
+        BigQueryDialect.colspecs[types.String] = BigQueryStringType
+    except ImportError:
+        pass
+
+
+_monkeypatch_bigquery_dialect()
 
 
 class BigQueryParametersSchema(Schema):

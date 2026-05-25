@@ -528,3 +528,32 @@ def test_get_view_names_excludes_materialized_views() -> None:
     assert "table_type = 'VIEW'" in executed_query
     # Ensure it's not querying for materialized views
     assert "MATERIALIZED VIEW" not in executed_query
+
+
+def test_bigquery_string_literal_escaping() -> None:
+    """
+    Test that the BigQuery dialect correctly escapes apostrophes in string
+    literals using backslash escaping instead of double-quoting.
+    """
+    from sqlalchemy import types
+
+    from superset.db_engine_specs.bigquery import BigQueryStringType
+
+    # Verify the monkeypatch was applied
+    assert BigQueryDialect.colspecs[types.String] is BigQueryStringType
+
+    dialect = BigQueryDialect()
+    bq_string = BigQueryStringType()
+    processor = bq_string.literal_processor(dialect)
+
+    # Simple string without apostrophes
+    assert processor("hello") == "'hello'"
+
+    # String with apostrophe uses backslash escaping
+    assert processor("O'Brien") == "'O\\'Brien'"
+
+    # Multiple apostrophes
+    assert processor("it's Fernando's") == "'it\\'s Fernando\\'s'"
+
+    # Backslashes are also escaped
+    assert processor("back\\slash") == "'back\\\\slash'"
