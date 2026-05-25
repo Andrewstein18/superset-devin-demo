@@ -591,6 +591,23 @@ export default function transformProps(
 
   const showMaxLabel =
     xAxisType === AxisType.Time && xAxisLabelRotation === 0 && !!timeGrainSqla;
+
+  // Pin the axis max to the last data point so that showMaxLabel renders a
+  // tick there instead of at an auto-computed "nice" boundary that may sit
+  // beyond the data range, leaving the last month unlabeled.
+  let timeAxisMax: number | undefined;
+  if (showMaxLabel && xAxisMax === undefined) {
+    const allData = [...rebasedDataA, ...rebasedDataB];
+    for (let i = 0; i < allData.length; i += 1) {
+      const val = Number(allData[i][xAxisLabel]);
+      if (Number.isFinite(val)) {
+        if (timeAxisMax === undefined || val > timeAxisMax) {
+          timeAxisMax = val;
+        }
+      }
+    }
+  }
+
   const deduplicatedFormatter = showMaxLabel
     ? (() => {
         let lastLabel: string | undefined;
@@ -721,6 +738,7 @@ export default function transformProps(
           ? EchartsTimeseriesSeriesType.Bar
           : undefined,
       ),
+      ...(timeAxisMax !== undefined && { max: timeAxisMax }),
     },
     yAxis: [
       {
