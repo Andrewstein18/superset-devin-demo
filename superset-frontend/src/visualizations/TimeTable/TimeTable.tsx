@@ -83,7 +83,9 @@ const TimeTable = ({
 
     return rows.map(row => {
       const valueField = row.label || row.metric_name || '';
-      const cellValues = columnConfigs.reduce<Record<string, ReactNode>>(
+      const cellValues = columnConfigs.reduce<
+        Record<string, ReactNode | Record<string, number | null>>
+      >(
         (acc, columnConfig) => {
           const { value, errorMsg } = calculateCellValue(
             valueField,
@@ -102,7 +104,7 @@ const TimeTable = ({
                 />
               ),
               cellValues: {
-                ...((acc.cellValues as object) || {}),
+                ...((acc.cellValues as Record<string, number | null>) || {}),
                 [columnConfig.key]: value,
               },
             };
@@ -118,7 +120,7 @@ const TimeTable = ({
               />
             ),
             cellValues: {
-              ...((acc.cellValues as object) || {}),
+              ...((acc.cellValues as Record<string, number | null>) || {}),
               [columnConfig.key]: value,
             },
           };
