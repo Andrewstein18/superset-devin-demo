@@ -53,28 +53,23 @@ PLAYWRIGHT_INSTALL_MESSAGE = (
 )
 
 if TYPE_CHECKING:
-    from typing import Any
-
     from flask_appbuilder.security.sqla.models import User
+    from playwright.sync_api import BrowserContext, Locator, Page
 
 try:
     from playwright.sync_api import (
-        BrowserContext,
         Error as PlaywrightError,
-        Locator,
-        Page,
         sync_playwright,
         TimeoutError as PlaywrightTimeout,
     )
 except ImportError:
-    from typing import Any
 
-    # Define dummy classes when playwright is not available
-    BrowserContext = Any
-    PlaywrightError = Exception
-    PlaywrightTimeout = Exception
-    Locator = Any
-    Page = Any
+    class PlaywrightError(Exception):  # type: ignore[no-redef]
+        """Stub exception for when playwright is not installed."""
+
+    class PlaywrightTimeout(Exception):  # type: ignore[no-redef]  # noqa: N818
+        """Stub exception for when playwright is not installed."""
+
     sync_playwright = None
 
 

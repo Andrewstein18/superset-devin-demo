@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, TYPE_CHECKING
+from typing import Callable, TYPE_CHECKING
 from urllib.parse import urlparse
 
 from flask import current_app as app, Flask, request, Response, session
@@ -33,11 +33,7 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from flask_appbuilder.security.sqla.models import User
-
-    try:
-        from playwright.sync_api import BrowserContext
-    except ModuleNotFoundError:
-        BrowserContext = Any
+    from playwright.sync_api import BrowserContext
 
 
 class MachineAuthProvider:
@@ -157,4 +153,7 @@ class MachineAuthProviderFactory:
 
     @property
     def instance(self) -> MachineAuthProvider:
-        return self._auth_provider  # type: ignore
+        assert self._auth_provider is not None, (
+            "MachineAuthProviderFactory not initialized. Call init_app() first."
+        )
+        return self._auth_provider

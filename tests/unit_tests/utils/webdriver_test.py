@@ -570,7 +570,7 @@ class TestWebDriverConstantsWithImportError:
 
     @patch("superset.utils.webdriver.sync_playwright", None)
     def test_dummy_classes_when_playwright_unavailable(self):
-        """Test that dummy classes are defined when Playwright unavailable."""
+        """Test that stub exception classes are defined when Playwright unavailable."""
         # Force reimport to test ImportError path
         from importlib import reload
 
@@ -580,10 +580,14 @@ class TestWebDriverConstantsWithImportError:
         with patch.dict("sys.modules", {"playwright.sync_api": None}):
             reload(webdriver_module)
 
-        # Should have dummy classes defined
-        assert hasattr(webdriver_module, "BrowserContext")
+        # Stub exception classes should be defined at module level
         assert hasattr(webdriver_module, "PlaywrightError")
         assert hasattr(webdriver_module, "PlaywrightTimeout")
+        # PlaywrightError and PlaywrightTimeout should be Exception subclasses
+        assert issubclass(webdriver_module.PlaywrightError, Exception)
+        assert issubclass(webdriver_module.PlaywrightTimeout, Exception)
+        # BrowserContext, Locator, Page are in TYPE_CHECKING only (not runtime)
+        assert webdriver_module.sync_playwright is None
 
 
 class TestWebDriverPlaywrightErrorHandling:
