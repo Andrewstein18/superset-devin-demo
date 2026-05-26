@@ -85,38 +85,21 @@ const TimeTable = ({
       const valueField = row.label || row.metric_name || '';
       const cellValues = columnConfigs.reduce<
         Record<string, ReactNode | Record<string, number | null>>
-      >(
-        (acc, columnConfig) => {
-          const { value, errorMsg } = calculateCellValue(
-            valueField,
-            columnConfig,
-            reversedEntries,
-          );
+      >((acc, columnConfig) => {
+        const { value, errorMsg } = calculateCellValue(
+          valueField,
+          columnConfig,
+          reversedEntries,
+        );
 
-          if (columnConfig.colType === 'spark') {
-            return {
-              ...acc,
-              [columnConfig.key]: (
-                <Sparkline
-                  valueField={valueField}
-                  column={columnConfig}
-                  entries={entries}
-                />
-              ),
-              cellValues: {
-                ...((acc.cellValues as Record<string, number | null>) || {}),
-                [columnConfig.key]: value,
-              },
-            };
-          }
-
+        if (columnConfig.colType === 'spark') {
           return {
             ...acc,
             [columnConfig.key]: (
-              <ValueCell
-                value={value}
+              <Sparkline
+                valueField={valueField}
                 column={columnConfig}
-                errorMsg={errorMsg}
+                entries={entries}
               />
             ),
             cellValues: {
@@ -124,9 +107,23 @@ const TimeTable = ({
               [columnConfig.key]: value,
             },
           };
-        },
-        {},
-      );
+        }
+
+        return {
+          ...acc,
+          [columnConfig.key]: (
+            <ValueCell
+              value={value}
+              column={columnConfig}
+              errorMsg={errorMsg}
+            />
+          ),
+          cellValues: {
+            ...((acc.cellValues as Record<string, number | null>) || {}),
+            [columnConfig.key]: value,
+          },
+        };
+      }, {});
       return {
         ...row,
         ...cellValues,
