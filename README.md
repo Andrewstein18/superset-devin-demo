@@ -65,6 +65,8 @@ On first load you can paste a Devin API token to see active sessions; check "Rem
 
 ## Architecture
 
+![Architecture diagram](docs/architecture.png)
+
 ```
 1. Issue labeled "devin-fix"
 2. GitHub Actions workflow fires  (.github/workflows/tech-debt-fixer.yml)
@@ -72,6 +74,17 @@ On first load you can paste a Devin API token to see active sessions; check "Rem
 4. Devin agent opens a PR         (references "Fixes #N")
 5. Status comment posted on issue (links to Devin session + PR)
 ```
+
+The system has six stages:
+
+| Stage | Component | Role |
+|-------|-----------|------|
+| **Trigger** (01) | GitHub label, dashboard button, or CLI | Any of these entry points can kick off remediation |
+| **Webhook receiver** (02) | GitHub Action (`tech-debt-fixer.yml`) | Listens for the `devin-fix` label event |
+| **Orchestrator** (03) | `fix_issue.py` dispatch | Validates the event and calls the Devin API |
+| **Execution** (04) | Devin fixer agent | Clones the repo, reads the issue, implements the fix, opens a PR |
+| **Validation** (05) | PR + CI (GitHub Actions) | Standard CI runs on the PR; if CI fails, a repair agent can retry |
+| **Observability** | `dashboard/` | Static HTML dashboard pulling live data from GitHub and Devin APIs |
 
 ## Results
 
