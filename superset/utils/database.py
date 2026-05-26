@@ -31,17 +31,15 @@ logging.getLogger("MARKDOWN").setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-# TODO: duplicate code with DatabaseDao, below function should be moved or use dao
 def get_or_create_db(
     database_name: str, sqlalchemy_uri: str, always_create: bool | None = True
 ) -> Database:
     # pylint: disable=import-outside-toplevel
     from superset import db
+    from superset.daos.database import DatabaseDAO
     from superset.models import core as models
 
-    database = (
-        db.session.query(models.Database).filter_by(database_name=database_name).first()
-    )
+    database = DatabaseDAO.get_database_by_name(database_name)
 
     # databases with a fixed UUID
     uuids = {
@@ -56,12 +54,22 @@ def get_or_create_db(
         db.session.add(database)
         database.set_sqlalchemy_uri(sqlalchemy_uri)
 
-    # todo: it's a bad idea to do an update in a get/create function
-    if database and database.sqlalchemy_uri_decrypted != sqlalchemy_uri:
-        database.set_sqlalchemy_uri(sqlalchemy_uri)
+    _sync_database_uri(database, sqlalchemy_uri)
 
     db.session.flush()
+
+    if database is None:
+        raise ValueError(
+            f"Database '{database_name}' not found and creation was skipped"
+        )
+
     return database
+
+
+def _sync_database_uri(database: Database | None, sqlalchemy_uri: str) -> None:
+    """Update the database URI if it differs from the expected value."""
+    if database and database.sqlalchemy_uri_decrypted != sqlalchemy_uri:
+        database.set_sqlalchemy_uri(sqlalchemy_uri)
 
 
 def get_example_database() -> Database:
@@ -75,16 +83,6 @@ def get_main_database() -> Database:
 
     db_uri = app.config["SQLALCHEMY_DATABASE_URI"]
     return get_or_create_db("main", db_uri)
-
-
-# TODO - the below method used by tests so should move there but should move together
-# with above function... think of how to refactor it
-def remove_database(database: Database) -> None:
-    # pylint: disable=import-outside-toplevel
-    from superset import db
-
-    db.session.delete(database)
-    db.session.flush()
 
 
 def apply_mariadb_ddl_fix() -> None:

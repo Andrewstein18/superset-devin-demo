@@ -30,7 +30,7 @@ from sqlalchemy.engine import Engine
 
 from superset import db, security_manager
 from superset.extensions import feature_flag_manager
-from superset.utils.database import get_example_database, remove_database
+from superset.utils.database import get_example_database
 from superset.utils.json import json_dumps_w_dates
 from tests.integration_tests.test_app import app, login
 
@@ -38,6 +38,13 @@ if TYPE_CHECKING:
     from flask.testing import FlaskClient
 
     from superset.connectors.sqla.models import Database
+
+
+def remove_database(database: Database) -> None:
+    """Remove a database record and flush the session."""
+    db.session.delete(database)
+    db.session.flush()
+
 
 CTAS_SCHEMA_NAME = "sqllab_test_db"
 ADMIN_SCHEMA_NAME = "admin_database"
