@@ -1657,3 +1657,50 @@ test('should assign distinct dash patterns for multiple time offsets consistentl
   // must be different patterns
   expect(symbol1).not.toEqual(symbol2);
 });
+
+test('category axis explicitly sets xAxis.data so no categories are dropped', () => {
+  const chartProps = createTestChartProps({
+    formData: {
+      metrics: ['total_value'],
+      granularity_sqla: 'ds',
+      x_axis: 'month_id',
+    },
+    queriesData: [
+      createTestQueryData(
+        [
+          { month_id: '202401', total_value: 496 },
+          { month_id: '202402', total_value: 1334 },
+          { month_id: '202403', total_value: 2356 },
+          { month_id: '202404', total_value: 3195 },
+          { month_id: '202405', total_value: 1799 },
+          { month_id: '202408', total_value: 4914 },
+          { month_id: '202409', total_value: 7785 },
+          { month_id: '202410', total_value: 8990 },
+          { month_id: '202411', total_value: 9615 },
+          { month_id: '202412', total_value: 10881 },
+        ],
+        {
+          colnames: ['month_id', 'total_value'],
+          coltypes: [GenericDataType.String, GenericDataType.Numeric],
+        },
+      ),
+    ],
+  });
+
+  const { echartOptions } = transformProps(chartProps);
+  const xAxis = echartOptions.xAxis as { type: string; data?: string[] };
+
+  expect(xAxis.type).toBe(AxisType.Category);
+  expect(xAxis.data).toEqual([
+    '202401',
+    '202402',
+    '202403',
+    '202404',
+    '202405',
+    '202408',
+    '202409',
+    '202410',
+    '202411',
+    '202412',
+  ]);
+});
