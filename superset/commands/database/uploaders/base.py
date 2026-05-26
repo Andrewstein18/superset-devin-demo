@@ -165,6 +165,11 @@ class UploadCommand(BaseCommand):
             )
         )
 
+        if not self._schema:
+            self._schema = self._model.get_default_schema(
+                self._model.get_default_catalog()
+            )
+
         self._reader.read(self._file, self._model, self._table_name, self._schema)
 
         sqla_table = (
