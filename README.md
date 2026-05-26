@@ -19,175 +19,82 @@ under the License.
 
 # Autonomous Issue Remediation Engine
 
-**Engineering orgs drown in issues they can't close.**
-Dependabot files CVEs faster than teams patch them. Snyk backlogs grow
-quarterly. JIRA tech-debt tickets sit untouched for months. The bottleneck
-isn't detection — it's remediation.
+A fork of [Apache Superset](https://github.com/apache/superset) wired with a GitHub Actions workflow that turns any issue labeled `devin-fix` into a pull request — automatically. A [Devin](https://devin.ai) AI agent reads the issue, clones the repo, writes the fix, and opens a PR referencing it. The entire loop (issue → PR) runs without human intervention; you just review and merge.
 
-This project is an event-driven engine that **closes issues autonomously**.
-Label any GitHub issue with `devin-fix`, and a [Devin](https://devin.ai)
-agent reads the issue, writes the fix, and opens a PR — ready for human
-review.
+## How to Test (< 5 minutes)
 
-## How It Works
+### Option A — Collaborator access (fastest)
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                    Issue Sources                              │
-│  (Dependabot, Snyk, SonarQube, JIRA, manual triage, ...)    │
-└─────────────────────────┬────────────────────────────────────┘
-                          │  label: devin-fix
-                          ▼
-┌──────────────────────────────────────────────────────────────┐
-│               GitHub Actions Workflow                         │
-│         .github/workflows/tech-debt-fixer.yml                │
-│                                                              │
-│  Trigger: issue labeled with "devin-fix"                     │
-│  Action:  run scripts/tech_debt_scanner/fix_issue.py         │
-└─────────────────────────┬────────────────────────────────────┘
-                          │
-                          ▼
-┌──────────────────────────────────────────────────────────────┐
-│                   Devin Agent                                 │
-│                                                              │
-│  1. Reads the issue                                          │
-│  2. Clones the repo                                          │
-│  3. Understands the codebase                                 │
-│  4. Implements the fix                                       │
-│  5. Opens a PR with "Fixes #N" (auto-closes on merge)       │
-└─────────────────────────┬────────────────────────────────────┘
-                          │
-                          ▼
-┌──────────────────────────────────────────────────────────────┐
-│                 Human Review                                  │
-│         Review PR → Approve → Merge → Issue auto-closed      │
-└──────────────────────────────────────────────────────────────┘
-```
+1. **Email [astein1801@gmail.com](mailto:astein1801@gmail.com)** with your GitHub username to be added as a collaborator.
+2. Open an issue on this repo (or pick an existing one).
+3. Add the **`devin-fix`** label.
+4. Watch the **Actions** tab — a workflow run appears within seconds.
+5. A Devin session is created; a comment on the issue links to it.
+6. Within minutes, a PR referencing the issue is opened automatically.
 
-## Triggers
+### Option B — Fork it yourself
 
-### 1. GitHub Actions (automatic)
+1. **Fork** this repo.
+2. In your fork, go to **Settings → Secrets and variables → Actions** and add a secret named **`DEVIN_API_TOKEN`** with your [Devin API token](https://app.devin.ai/settings).
+3. Create an issue in your fork and add the **`devin-fix`** label.
+4. The workflow triggers identically — it uses `${{ github.repository }}` so no config changes are needed.
 
-Any issue labeled `devin-fix` triggers the workflow automatically:
+## View the Dashboard
 
-1. Create or label an issue with `devin-fix`
-2. The workflow spawns a Devin agent
-3. Devin reads the issue, writes the fix, opens a PR
-4. Review and merge the PR — the issue auto-closes
-
-### 2. Manual CLI
+The dashboard is static HTML — no build step, no dependencies.
 
 ```bash
-python scripts/devin_trigger.py \
-  --repo Andrewstein18/superset-devin-demo \
-  --title "Fix: missing null check in parser" \
-  --body "The parser crashes when input is None..." \
-  --label devin-fix
+cd dashboard/
+python3 -m http.server 8000
+# open http://localhost:8000
 ```
-
-This creates the GitHub issue and immediately triggers a Devin session.
-
-## Observability: Dashboard
-
-Open `dashboard/index.html` in a browser to see the value dashboard.
-No build step required — it talks directly to the GitHub and Devin APIs.
-
-**Headline metrics:**
-- **Estimated $ Saved** — based on engineer hourly rate and hours-per-issue
-- **Engineering Hours Saved** — gross hours reclaimed
-- **Issues Closed Autonomously** — merged Devin PRs
-- **Avg Time-to-PR** — issue opened → PR opened
-
-**Supporting metrics:** PR pipeline health, success rate, active Devin
-sessions, weekly throughput.
-
-All value estimates use editable assumptions (engineer cost, hours per
-issue, review time) — transparent math a VP of Engineering can trust.
-
-## Setup
-
-### 1. Environment variables
-
-Copy `.env.example` to `.env` and fill in your values:
-
-```bash
-cp .env.example .env
-```
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `DEVIN_API_TOKEN` | Devin API token ([Settings → API](https://app.devin.ai)) | Yes |
-| `GITHUB_TOKEN` | GitHub PAT with `repo` + `issues` scope | Yes |
-| `TARGET_REPO` | Repository in `owner/repo` format | No (defaults to config.yaml) |
-| `TRIGGER_LABEL` | Label that triggers the fixer | No (defaults to `devin-fix`) |
-
-### 2. GitHub Actions secrets
-
-Add `DEVIN_API_TOKEN` to your repo's Actions secrets:
-**Settings → Secrets and variables → Actions → New repository secret**
-
-### 3. Configuration
-
-Edit `config.yaml` for persistent defaults:
-
-```yaml
-target_repo: "Andrewstein18/superset-devin-demo"
-trigger_label: "devin-fix"
-```
-
-Environment variables override `config.yaml` values.
-
-### 4. Dashboard — quick start
-
-```bash
-# Open directly in a browser — no server needed
-open dashboard/index.html
-```
-
-On first load, paste your Devin API token when prompted. Check
-"Remember on this browser" and it will be saved for next time — no
-re-entry needed.
 
 GitHub data (issues, PRs) loads without authentication for public repos.
+On first load you can paste a Devin API token to see active sessions; check "Remember on this browser" to persist it.
 
-### 5. Dashboard — local dev convenience
+## What to Look At
 
-For a fully automatic load (no manual token entry at all):
+| Where | What you'll see |
+|-------|-----------------|
+| [**Issues**](../../issues?q=label%3Adevin-fix) | Issues labeled `devin-fix` that triggered the engine |
+| [**Pull Requests**](../../pulls?q=label%3Aautomated-fix) | PRs opened by Devin with the `automated-fix` label |
+| [**Actions**](../../actions/workflows/tech-debt-fixer.yml) | Workflow runs — one per labeled issue |
+| `.github/workflows/tech-debt-fixer.yml` | The workflow file (trigger + permissions) |
+| `scripts/tech_debt_scanner/fix_issue.py` | Python script that calls the Devin API |
+| `dashboard/` | Static HTML dashboard with live GitHub/Devin metrics |
 
-```bash
-cp dashboard/secrets.js.example dashboard/secrets.js
-# Edit dashboard/secrets.js and paste your tokens
-```
+## Architecture
 
-`secrets.js` is gitignored and will never be committed. It supports two tokens:
-
-- **`GITHUB_TOKEN`** — raises the GitHub API rate limit from 60 to 5,000
-  requests/hour. Create one at https://github.com/settings/tokens (no
-  scopes needed for public repos).
-- **`DEVIN_TOKEN`** — enables the "Active Sessions" card.
-
-## Project Structure
+![Architecture diagram](docs/architecture.png)
 
 ```
-├── .github/workflows/
-│   └── tech-debt-fixer.yml     # Reactive workflow: issue labeled → Devin agent
-├── scripts/
-│   ├── tech_debt_scanner/
-│   │   └── fix_issue.py        # Spawns a Devin fixer session for an issue
-│   └── devin_trigger.py        # CLI: create issue + trigger Devin
-├── dashboard/
-│   ├── index.html              # Value dashboard (vanilla HTML+JS)
-│   └── config.js               # Dashboard configuration defaults
-├── config.yaml                 # Engine configuration
-├── .env.example                # Environment variable template
-└── tests/unit_tests/remediation/
-    └── test_fix_issue.py       # Integration test for the fixer flow
+1. Issue labeled "devin-fix"
+2. GitHub Actions workflow fires  (.github/workflows/tech-debt-fixer.yml)
+3. Workflow calls Devin API       (scripts/tech_debt_scanner/fix_issue.py)
+4. Devin agent opens a PR         (references "Fixes #N")
+5. Status comment posted on issue (links to Devin session + PR)
 ```
 
-## Next Steps
+The system has six stages:
 
-- **Multi-repo support** — run one engine instance across multiple repositories
-- **JIRA / Linear as trigger sources** — watch external issue trackers, not just GitHub labels
-- **Custom remediation playbooks per label** — different fix strategies for security vs. tech-debt vs. dependency issues
-- **Per-team cost dashboards** — break down savings by team or service area
-- **Webhook-driven triggers** — replace polling with real-time event processing
+| Stage | Component | Role |
+|-------|-----------|------|
+| **Trigger** (01) | GitHub label, dashboard button, or CLI | Any of these entry points can kick off remediation |
+| **Webhook receiver** (02) | GitHub Action (`tech-debt-fixer.yml`) | Listens for the `devin-fix` label event |
+| **Orchestrator** (03) | `fix_issue.py` dispatch | Validates the event and calls the Devin API |
+| **Execution** (04) | Devin fixer agent | Clones the repo, reads the issue, implements the fix, opens a PR |
+| **Validation** (05) | PR + CI (GitHub Actions) | Standard CI runs on the PR; if CI fails, a repair agent can retry |
+| **Observability** | `dashboard/` | Static HTML dashboard pulling live data from GitHub and Devin APIs |
+
+## Results
+
+| Issue | PR | Description |
+|-------|----|-------------|
+| [#116](../../issues/116) | [#128](../../pull/128) | Last month missing on time-series X axis |
+| [#112](../../issues/112) | [#125](../../pull/125) | BigQuery errors with apostrophes in filters |
+| [#111](../../issues/111) | [#126](../../pull/126) | Percentage formatting broken on small numbers |
+| [#110](../../issues/110) | [#129](../../pull/129) | CSV import creates duplicate datasets |
+| [#109](../../issues/109) | [#127](../../pull/127) | Histogram warning in logs |
+| [#117](../../issues/117) | [#118](../../pull/118) | Chart description heatmap x-axis cutoff |
+
+Every PR was generated end-to-end by a Devin agent with zero manual coding. Review any PR to see the diff, the linked Devin session, and the original issue.
