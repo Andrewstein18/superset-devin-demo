@@ -295,6 +295,27 @@ export default function transformProps(
     totalStackedValues: totalStackedValuesB,
     xAxisType,
   });
+
+  // Explicitly collect category axis values from all series so ECharts
+  // does not silently drop categories when auto-inferring them.
+  let categoryAxisData: (string | number)[] | undefined;
+  if (xAxisType === AxisType.Category) {
+    const allSeries = [...rawSeriesA, ...rawSeriesB];
+    if (allSeries.length > 0) {
+      const seen = new Set<string | number>();
+      categoryAxisData = [];
+      for (const s of allSeries) {
+        for (const d of s.data as (string | number)[][]) {
+          const v = d[0];
+          if (!seen.has(v)) {
+            seen.add(v);
+            categoryAxisData.push(v);
+          }
+        }
+      }
+    }
+  }
+
   const series: SeriesOption[] = [];
 
   const resolvedCurrency = resolveAutoCurrency(
@@ -685,6 +706,7 @@ export default function transformProps(
     },
     xAxis: {
       type: xAxisType,
+      ...(categoryAxisData ? { data: categoryAxisData } : {}),
       name: xAxisTitle,
       nameGap: convertInteger(xAxisTitleMargin),
       nameLocation: 'middle',

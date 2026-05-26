@@ -337,6 +337,25 @@ export default function transformProps(
       xAxisType,
     },
   );
+
+  // Explicitly collect category axis values from the series data so ECharts
+  // does not silently drop categories when auto-inferring them.
+  let categoryAxisData: (string | number)[] | undefined;
+  if (xAxisType === AxisType.Category && rawSeries.length > 0) {
+    const xIdx = isHorizontal ? 1 : 0;
+    const seen = new Set<string | number>();
+    categoryAxisData = [];
+    for (const s of rawSeries) {
+      for (const d of s.data as (string | number)[][]) {
+        const v = d[xIdx];
+        if (!seen.has(v)) {
+          seen.add(v);
+          categoryAxisData.push(v);
+        }
+      }
+    }
+  }
+
   const showValueIndexes = extractShowValueIndexes(rawSeries, {
     stack,
     onlyTotal,
@@ -886,6 +905,7 @@ export default function transformProps(
 
   let xAxis: any = {
     type: xAxisType,
+    ...(categoryAxisData ? { data: categoryAxisData } : {}),
     name: xAxisTitle,
     nameGap: convertInteger(xAxisTitleMargin),
     nameLocation: 'middle',
