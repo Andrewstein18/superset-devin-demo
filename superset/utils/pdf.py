@@ -28,6 +28,7 @@ except ModuleNotFoundError:
 
 
 def build_pdf_from_screenshots(snapshots: list[bytes]) -> bytes:
+    """Stitch a list of PNG screenshots into a single multi-page PDF."""
     images = []
 
     for snap in snapshots:

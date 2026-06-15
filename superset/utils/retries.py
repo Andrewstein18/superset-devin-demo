@@ -32,9 +32,7 @@ def retry_call(  # pylint: disable=too-many-arguments
     fkwargs: Optional[dict[str, Any]] = None,
     **kwargs: Any,
 ) -> Any:
-    """
-    Retry a given call.
-    """
+    """Retry *func* using a ``backoff`` strategy on *exception*."""
     kwargs["giveup_log_level"] = giveup_log_level
     decorated = backoff.on_exception(strategy, exception, *args, **kwargs)(func)
     fargs = fargs or []

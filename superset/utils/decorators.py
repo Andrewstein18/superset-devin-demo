@@ -149,7 +149,7 @@ def stats_timing(stats_key: str, stats_logger: BaseStatsLogger) -> Iterator[floa
 
 
 def arghash(args: Any, kwargs: Any) -> int:
-    """Simple argument hash with kwargs sorted."""
+    """Return a hash of positional and keyword arguments for deduplication."""
     sorted_args = tuple(
         x if hasattr(x, "__repr__") else x for x in [*args, *sorted(kwargs.items())]
     )
@@ -185,6 +185,7 @@ def debounce(duration: float | int = 0.1) -> Callable[..., Any]:
 
 
 def on_security_exception(self: Any, ex: Exception) -> Response:
+    """Default handler that converts a security exception into a 403 response."""
     return self.response(403, **{"message": utils.error_msg_from_exception(ex)})
 
 

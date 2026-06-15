@@ -27,6 +27,12 @@ from sqlalchemy_utils import EncryptedType as SqlaEncryptedType
 
 
 class EncryptedType(SqlaEncryptedType):
+    """SQLAlchemy ``TypeDecorator`` for transparent column encryption.
+
+    Wraps ``sqlalchemy_utils.EncryptedType`` and sets ``cache_ok = True``
+    so SQLAlchemy's query-compilation cache accepts this type.
+    """
+
     cache_ok = True
 
 
