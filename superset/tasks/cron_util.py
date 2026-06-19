@@ -29,6 +29,18 @@ logger = logging.getLogger(__name__)
 def cron_schedule_window(
     triggered_at: datetime, cron: str, timezone: str
 ) -> Iterator[datetime]:
+    """
+    Yield UTC datetimes matching a cron expression within a time window.
+
+    Converts ``triggered_at`` to the given timezone, opens a symmetric window
+    of ``ALERT_REPORTS_CRON_WINDOW_SIZE`` seconds around it, and yields each
+    cron-matching instant (converted back to naive UTC).
+
+    :param triggered_at: The reference time (typically "now") in UTC
+    :param cron: A cron expression string (e.g. ``"0 * * * *"``)
+    :param timezone: IANA timezone name for interpreting the cron schedule
+    :yields: Naive-UTC datetimes for each matching cron tick in the window
+    """
     window_size = current_app.config["ALERT_REPORTS_CRON_WINDOW_SIZE"]
     try:
         tz = pytz_timezone(timezone)

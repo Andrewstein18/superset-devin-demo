@@ -110,6 +110,7 @@ def get_executor(  # noqa: C901
 
 
 def get_current_user() -> str | None:
+    """Return the username of the logged-in user, or None if anonymous/missing."""
     user = g.user if hasattr(g, "user") and g.user else None
     if user and not user.is_anonymous:
         return user.username
