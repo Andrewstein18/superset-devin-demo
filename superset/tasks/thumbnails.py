@@ -88,6 +88,9 @@ def cache_dashboard_thumbnail(
         return
 
     dashboard = Dashboard.get(dashboard_id)
+    if not dashboard:
+        logger.warning("No dashboard found, skip computing dashboard thumbnail")
+        return
     url = get_url_path("Superset.dashboard", dashboard_id_or_slug=dashboard.id)
 
     logger.info("Caching dashboard: %s", url)
@@ -127,6 +130,9 @@ def cache_dashboard_screenshot(  # pylint: disable=too-many-arguments
         return
 
     dashboard = Dashboard.get(dashboard_id)
+    if not dashboard:
+        logger.warning("No dashboard found, skip computing dashboard screenshot")
+        return
 
     logger.info("Caching dashboard: %s", dashboard_url)
 
